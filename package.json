@@ -1,0 +1,16 @@
+{
+  "name": "nodelistserver",
+  "version": "1.0.0",
+  "description": "NodeJS (re)implementation of the Mirror List Server",
+  "main": "listServer.js",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Matt Coburn (SoftwareGuy/Coburn)",
+  "license": "MIT"
+}
