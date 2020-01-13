@@ -50,11 +50,13 @@ NodeListServer does not have the following features:
 ## Configuration
 1. Open `listServer.js` in your text editor.
 2. Find this comment block:
-```
+
+```javascript
 // --------------
 // Editable things
 // --------------
 ```
+
 3. Edit any variables under this comment block. **Do not edit anything below where it says "STOP!".**
 4. Save and Exit the Text Editor. Re-upload your modified listServer.js file if required (ie. you edited it via FTP).
 ## Operating & Updating
@@ -72,9 +74,7 @@ NodeListServer does not have the following features:
 
 ### Updating NodeListServer
 1. Stop NodeListServer if it's running.
-2. Execute `git pull` from the repository you cloned to your local machine or server instance. 
-
-Note that if you obtained the source via a ZIP archive, then you're not going to be able to just execute `git pull`. Download and extract a new ZIP archive of this repository instead.
+2. Execute `git pull` from the repository you cloned to your local machine or server instance.  Note that if you obtained the source via a ZIP archive, then you're not going to be able to just execute `git pull`. Download and extract a new ZIP archive of this repository instead.
 3. Any new updates will be applied automatically, unless you have edited the code in which a merge conflict may occur. You will need to rectify this manually (and you should know how to do this).
 4. Start NodeListServer again.
 
@@ -90,7 +90,7 @@ TODO.
 TODO.
 
 ## Credits
-- vis2k: Mirror Networking and the original Mirror List Server members
+- vis2k: Mirror Networking and the original List Server
 - Mirror Team & Discord Members
 
 ***Thank you for choosing Australian Open Source Software.***
