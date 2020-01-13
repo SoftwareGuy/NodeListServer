@@ -1,4 +1,8 @@
 # NodeListServer
+[![Ko-Fi](https://img.shields.io/badge/Donate-Ko--Fi-red)](https://ko-fi.com/coburn) 
+[![PayPal](https://img.shields.io/badge/Donate-PayPal-blue)](https://paypal.me/coburn64)
+![MIT Licensed](https://img.shields.io/badge/license-MIT-green.svg)
+
 This is a reimplementation of the Mirror List Server using NodeJS with 100% Fresh, Organic, Free-Range Australian Code.
 
 ## Features
@@ -12,8 +16,8 @@ This is a reimplementation of the Mirror List Server using NodeJS with 100% Fres
 
 NodeListServer does not have the following features:
 
-- Matchmaking: Too complicated for what this product does.
-- IP Address Blacklisting/Whitelisting: Add it yourself if you want it.
+- **Matchmaking:** Too complicated for what this product does.
+- **IP Address Blacklisting/Whitelisting:** Add it yourself if you want it.
 - Anything else that it doesn't offer.
 
 ## Bug Fixes, New Features, etc
@@ -44,16 +48,33 @@ NodeListServer does not have the following features:
 **Note: The ZIP Installation Method loses it's Git metadata, so you will not be able to have easy updates.**
 
 ## Configuration
-TODO.
-
+1. Open `listServer.js` in your text editor.
+2. Find this comment block:
+```
+// --------------
+// Editable things
+// --------------
+```
+3. Edit any variables under this comment block. **Do not edit anything below where it says "STOP!".**
+4. Save and Exit the Text Editor. Re-upload your modified listServer.js file if required (ie. you edited it via FTP).
 ## Operating & Updating
 
 ### Starting and Stopping
-TODO.
+*Note: It's recommended to use a process manager like **PM2** which will allow you start and stop the server elegantly, and restart it in case of crashes, etc.*
+
+**To start the server:**
+1. Invoke NodeJS with `listServer.js`. This is dependent on your operating system, but if Node is installed in your path, you can simply do `node listServer.js`.
+2. Observe the logs. If the list server does not say `Up and listening [...]` then something went wrong. Check to see if the port is open that you want NodeListServer to listen on. **You cannot have more than one list server listening on the same port number.**
+3. Try poking the server via `http://[your server ip]:8889` or whatever port you configured it as. If you're running it locally you can do `http://127.0.0.1:8889` with the shipped configuration.
+
+**To stop the server:**
+1. Simply CTRL+C the running Node Process, or you can use kill/pkill to kill the node instance. I'd recommend using `ps aux` and `kill` carefully, because `pkill node` would try to kill all node instances on your box.
 
 ### Updating NodeListServer
 1. Stop NodeListServer if it's running.
-2. Execute `git pull` from the repository you cloned to your local machine or server instance. Note that if you obtained the source via a ZIP archive, then you're not going to be able to just execute `git pull`. Download and extract a new ZIP archive of this repository instead.
+2. Execute `git pull` from the repository you cloned to your local machine or server instance. 
+
+Note that if you obtained the source via a ZIP archive, then you're not going to be able to just execute `git pull`. Download and extract a new ZIP archive of this repository instead.
 3. Any new updates will be applied automatically, unless you have edited the code in which a merge conflict may occur. You will need to rectify this manually (and you should know how to do this).
 4. Start NodeListServer again.
 
@@ -69,8 +90,7 @@ TODO.
 TODO.
 
 ## Credits
-- vis2k: Mirror and Mirror List Server
-- Mirror Team
-- Mirror Discord Members
+- vis2k: Mirror Networking and the original Mirror List Server members
+- Mirror Team & Discord Members
 
 ***Thank you for choosing Australian Open Source Software.***
