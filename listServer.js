@@ -101,7 +101,8 @@ function apiAddToServerList(req, res) {
 		console.log("[WARN] Add server request had no proper data.");
 		return res.sendStatus(400)
 	}
-		
+
+	// Top Secret Debugging Leftovers
 	// console.log(req.body)
 	// curl -X POST --data "serverUuid=ef914272-17e4-11ea-b0b7-fbbcad81d6d3&serverName=Test&serverPort=7777"
 	
@@ -165,6 +166,8 @@ function apiRemoveFromServerList(req, res) {
 	return res.sendStatus(501)
 }
 
+// PR welcome to fix this horrible mess.
+// I know how to do this in C# but not in NodeJS.
 function apiDoesThisServerExist(uuid, array) {
 	for (var i = 0, len = knownServers.length; i < len; i++) {
 		if(knownServers[i].uuid == uuid) return true;
