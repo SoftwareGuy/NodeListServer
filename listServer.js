@@ -73,7 +73,7 @@ function apiGetServerList(req, res) {
 	var serverList = [];
 	
 	for (var i = 0, len = knownServers.length; i < len; i++) {
-		serverList.push({ 'ip': knownServers[i].ip, 'name': knownServers[i].name, 'port': knownServers[i].port });
+		serverList.push({ 'ip': knownServers[i].ip, 'name': knownServers[i].name, 'port': parseInt(knownServers[i].port) });
 	}
 	
 	// Top Secret Debugging Leftovers
