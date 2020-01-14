@@ -76,6 +76,7 @@ function apiGetServerList(req, res) {
 		serverList.push({ 'ip': knownServers[i].ip, 'name': knownServers[i].name, 'port': knownServers[i].port });
 	}
 	
+	// Top Secret Debugging Leftovers
 	// console.log(knownServers);
 	// console.log(serverList);
 	
@@ -86,7 +87,7 @@ function apiGetServerList(req, res) {
 	}]
 
 	// console.log(returnedServerList)
-	console.log(`[INFO] Sending server list to ${req.ip}`)
+	console.log(`[INFO] Sending server list to ${req.ip}.`)
 	return res.json(returnedServerList)
 }
 
@@ -146,21 +147,24 @@ function apiRemoveFromServerList(req, res) {
 		return res.sendStatus(400)
 	}
 	
-	var newKnownServers = knownServers.filter(server => server.uuid != req.body.serverUuid)
-	console.log(`[INFO] Deleted server '${req.body.serverUuid}' (if it existed) from cache (requested by ${req.ip})`)
-	return res.send("OK");
-
-	// Left over fragment.
+	if(!apiDoesThisServerExist(req.body.serverUuid, knownServers)) {
+		console.log(`[WARN] Cannot delete server '${req.body.serverUuid}' from cache (requested by ${req.ip}): No such server`)
+		return res.sendStatus(400)
+	} else {
+		knownServers = knownServers.filter(server => server.uuid != req.body.serverUuid)
+		console.log(`[INFO] Deleted server '${req.body.serverUuid}' from cache (requested by ${req.ip})`)
+		return res.send("OK");
+	}
+	
 	// Fail safe.
-	// return res.sendStatus(501)
+	return res.sendStatus(501)
 }
 
-// PR welcome to fix this horrible mess.
-// I know how to do this in C# but not in NodeJS.
+// Checks if the server exists in our cache.
 function apiDoesThisServerExist(uuid, array) {
 	var doesExist = knownServers.filter(server => server.uuid == uuid);
 	
-	if(doesExist.count() > 0) return true;
+	if(doesExist.length > 0) return true;
 	
 	// Fall though.
 	return false;
