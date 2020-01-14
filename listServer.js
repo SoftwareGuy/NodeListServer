@@ -140,38 +140,28 @@ function apiRemoveFromServerList(req, res) {
 		return res.sendStatus(400)
 	}
 	
-	// Oh gawd this is horrible...
-	// PRs welcome to improve this crap.
-	if(apiDoesThisServerExist(req.body.serverUuid, knownServers)) {
-		var removal = 0;
-		
-		// Remove the server from the list... it exists somewhere.
-		for(var i = 0; i < knownServers.length; i++) {
-			removal = i;
-			break;
-		}
-
-		// Trashcan Pro.
-		knownServers.splice(removal, 1);
-		
-		console.log(`[INFO] Deleted server '${req.body.serverUuid}' from cache (requested by ${req.ip})`)
-		return res.send("OK");
-	} else {
-		// Does not exist - bad request.
-		console.log(`[WARN] Denied request from ${req.ip}; server UUID does not exist.`)
+	if(req.body.serverUuid === undefined) {
+		// Server isn't specified?
+		console.log(`[WARN] Denied request from ${req.ip}; Server UUID was not provided.`)
 		return res.sendStatus(400)
 	}
+	
+	var newKnownServers = knownServers.filter(server => server.uuid != req.body.serverUuid)
+	console.log(`[INFO] Deleted server '${req.body.serverUuid}' (if it existed) from cache (requested by ${req.ip})`)
+	return res.send("OK");
 
+	// Left over fragment.
 	// Fail safe.
-	return res.sendStatus(501)
+	// return res.sendStatus(501)
 }
 
 // PR welcome to fix this horrible mess.
 // I know how to do this in C# but not in NodeJS.
 function apiDoesThisServerExist(uuid, array) {
-	for (var i = 0, len = knownServers.length; i < len; i++) {
-		if(knownServers[i].uuid == uuid) return true;
-	}
+	var doesExist = knownServers.filter(server => server.uuid == uuid);
 	
+	if(doesExist.count() > 0) return true;
+	
+	// Fall though.
 	return false;
 }
