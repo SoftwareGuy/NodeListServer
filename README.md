@@ -3,7 +3,7 @@
 [![PayPal](https://img.shields.io/badge/Donate-PayPal-blue)](https://paypal.me/coburn64)
 ![MIT Licensed](https://img.shields.io/badge/license-MIT-green.svg)
 
-This is a reimplementation of the Mirror List Server using NodeJS with 100% Fresh, Organic, Free-Range Australian Code.
+This is a reimplementation of the Mirror List Server using NodeJS with 100% Fresh, Organic, Free-Range Australian Code. It runs on top of NodeJS 12.x LTS with Express as the light-weight web server.
 
 _Note: I highly recommend running NodeListServer on a Linux server instance rather than Windows. If you are running NodeJS on Windows, please do your best to adapt various instructions to the Windows equivalents._
 
@@ -42,7 +42,7 @@ NodeListServer does not have the following features:
 
 ### Git Clone Method (recommended)
 
-1. Clone this repository via the clone URL provided. On Windows and Mac you can use Git GUI or SourceTree. On Linux, just make sure you have git installed, then use the Terminal to get that freshly baked source code.
+1. Clone this repository via the clone URL provided. On Windows and Mac you can use Git GUI or SourceTree. On Mac/Linux, just make sure you have git installed, then use the Terminal to get that freshly baked source code.
 2. Follow the instructions outlined in the **Operating & Updating** header below.
 
 ### ZIP Installation Method
@@ -107,22 +107,22 @@ Up and listening on HTTP port 8889!
 
 ### API Endpoints
 
-**Endpoint `/`**
-- This endpoint does nothing but returns a error to try to deter people probing your installation of NodeListServer.
+**Endpoint `/` and other endpoints not defined**
+- These endpoint do nothing but return a error to try to deter people probing your installation of NodeListServer.
 
 **Endpoint `/add`**
-- Method: POST
-- Required POST elements: serverUuid (Server's UUID), serverName (Server's Name), serverPort (Server's Listening Port)
+- **Method:** POST
+- **Required POST elements:** serverUuid (Server's UUID), serverName (Server's Name), serverPort (Server's Listening Port)
 - This is the endpoint that you use to add servers to the NodeListServer Cache.
 
 
 **Endpoint `/list`**
-- Method: GET
-- This is the endpoint you use to get a server list. Note that we return a server list that doesn't have all the cache array fields like the Server UUID. The reason behind that is if we did, someone could take the UUID and pass it to the `remove` Endpoint. And we don't want that, do we?
+- **Method:** GET
+- This is the endpoint you use to get a server list. Note that we return a server list that doesn't have all the cache fields like the Server UUID. The reason behind that is if we did, someone could take the UUID and pass it to the `remove` Endpoint. And we don't want that, do we?
 
 **Endpoint `/remove`**
-- Method: POST
-- Required POST elements: serverUuid (Server's UUID)
+- **Method:** POST
+- **Required POST elements:** serverUuid (Server's UUID)
 - This is the endpoint you use to remove a server from the NodeListServer Cache. You need to supply the server UUID for it to be removed.
 
 ### API Communication Examples
@@ -149,7 +149,13 @@ curl -X POST --data "serverUuid=[UUID GOES HERE]" [instance IP address]:8889/rem
 
 ## Using NodeListServer with Unity
 
-It's pretty easy to use NodeListServer with Unity. You can use UnityWebRequest or another library (ie. Best HTTP Pro) to fetch the server lists and issue add/remove commands. As long as you can decode JSON it returns for the server list, you should be smooth sailing. Here's some generic serializable classes that you can use to translate the JSON into something more usable:
+It's pretty easy to use NodeListServer with Unity. You can use UnityWebRequest or another library (ie. Best HTTP Pro) to fetch the server lists and issue add/remove commands. As long as you can decode JSON it returns for the server list, you should be smooth sailing. 
+
+Important: **DO NOT** auto-assume that POST functions will be successful. **Always check the HTTP status code before doing anything with the returned response**. 
+- You will get HTTP Code 200 with a "OK" response from NodeListServer on success. 
+- Anything not 200 will be NodeListServer denying your request (you'll most likely get HTTP Code 400, Bad Request).
+
+As a bonus, here's some generic serializable classes that you can use to translate the JSON into something more usable:
 
 
 ```csharp
@@ -172,11 +178,10 @@ public class NodeListServerListEntry {
 	// Port of the server.
 	public int port;
 }
+
 ```
 
 Make sure you POST the correct data when you want to add/remove servers. See API Endpoints for more details on the required POST fields.
-
-Also **DO NOT** auto-assume that POST functions will be successful. **Always check the HTTP status code before assuming ANYTHING**. You will get HTTP Code 200 with a "OK" response from NodeListServer on success. Anything not 200 will be NodeListServer denying your request (you'll most likely get HTTP Code 400 (Bad Request)).
 
 ## Credits
 
