@@ -80,7 +80,7 @@ function apiGetServerList(req, res) {
 	var serverList = [];
 	
 	for (var i = 0, len = knownServers.length; i < len; i++) {
-		serverList.push({ 'ip': knownServers[i].ip, 'name': knownServers[i].name, 'port': parseInt(knownServers[i].port) });
+		serverList.push({ 'ip': knownServers[i].ip, 'name': knownServers[i].name, 'port': parseInt(knownServers[i].port) })
 	}
 	
 	// Top Secret Debugging Leftovers
@@ -88,10 +88,10 @@ function apiGetServerList(req, res) {
 	// console.log(serverList);
 	
 	// Temporary holder for the server list we're about to send.
-	var returnedServerList = [{
+	var returnedServerList = {
 		'count': serverList.length,
 		'servers': serverList,
-	}]
+	}
 
 	// console.log(returnedServerList)
 	console.log(`[INFO] Sending server list to ${req.ip}.`)
