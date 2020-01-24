@@ -24,6 +24,11 @@
 // --------------
 // The listening port for this List Server instance.
 const listenPort = 8889
+const useAccessControl = false
+
+// Allowed Server Addresses need to be in IPv6 format, for example IPv4 127.0.0.1 becomes this according
+// to the Express Web Server.
+const allowedServerAddresses = [ "::ffff:127.0.0.1" ]
 
 // ---------------
 // STOP! Do not edit below this line unless you know what you're doing,
@@ -52,7 +57,9 @@ expressApp.post("/add", apiAddToServerList)				// Add a server to the list...
 expressApp.post("/remove", apiRemoveFromServerList)		// Remove a server from the list...
 
 // Finally, start the application
-console.log("This is Mirror List Server, NodeJS version by SoftwareGuy (Coburn).");
+console.log("Hello there, I'm NodeListServer aka Mirror List Server, NodeJS version by SoftwareGuy (Coburn)")
+console.log("Report bugs and fork me on GitHub: https://github.com/SoftwareGuy/NodeListServer")
+
 expressApp.listen(listenPort, () => console.log(`Up and listening on HTTP port ${listenPort}!`))
 
 function denyRequest (req, res) {
@@ -112,6 +119,13 @@ function apiAddToServerList(req, res) {
 		return res.sendStatus(400)
 	}
 	
+	// Are we using access control? If so, are they allowed to do this?
+	if(useAccessControl === true && !allowedServerAddresses.includes(req.ip)) {
+		// Not allowed.
+		console.log(`[WARN] Add server request blocked from ${req.ip}. They are not known in our allowed IPs list.`);
+		return res.sendStatus(403);
+	}
+	
 	// Add the server to the list.
 	// NOTE: we check if there's a UUID collision before we add the server, as this will help prevent
 	// malicious abuse or instances where the same UUID gets added twice, etc. 
@@ -124,27 +138,38 @@ function apiAddToServerList(req, res) {
 	// We'll get the IP address directly, don't worry about that
 	var newServer = { 'uuid': req.body.serverUuid, 'ip': req.ip, 'name': req.body.serverName, 'port': req.body.serverPort }
 
+
+	// Get to the bus, before we're outta time.
 	knownServers.push(newServer);
+	
 	console.log(`[INFO] Added server '${req.body.serverUuid}' to cache from ${req.ip}`)
 	return res.send("OK")
 }
 
 function apiRemoveFromServerList(req, res) {	
+	// GET outta here.
 	if(req.method != "POST") {
 		console.log(`[WARN] Denied request from ${req.ip}; expected POST but got ${req.method} instead!`)
 		return res.sendStatus(400)
 	}
 
+	// Lul, someone tried to send a empty request.
 	if(req.body === undefined) {
-		// POST attack?
 		console.log(`[WARN] Denied request from ${req.ip}; no POST data was provided.`)
 		return res.sendStatus(400)
 	}
-	
+
+	// Server isn't specified?	
 	if(req.body.serverUuid === undefined) {
-		// Server isn't specified?
 		console.log(`[WARN] Denied request from ${req.ip}; Server UUID was not provided.`)
 		return res.sendStatus(400)
+	}
+	
+	// Are we using access control? If so, are they allowed to do this?
+	if(useAccessControl === true && !allowedServerAddresses.includes(req.ip)) {
+		// Not allowed.
+		console.log(`[WARN] Add server request blocked from ${req.ip}. They are not known in our allowed IPs list.`);
+		return res.sendStatus(403);
 	}
 	
 	if(!apiDoesThisServerExist(req.body.serverUuid, knownServers)) {
@@ -153,7 +178,7 @@ function apiRemoveFromServerList(req, res) {
 	} else {
 		knownServers = knownServers.filter(server => server.uuid != req.body.serverUuid)
 		console.log(`[INFO] Deleted server '${req.body.serverUuid}' from cache (requested by ${req.ip})`)
-		return res.send("OK");
+		return res.send("OK")
 	}
 	
 	// Fail safe.

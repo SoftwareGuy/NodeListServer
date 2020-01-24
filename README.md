@@ -12,6 +12,7 @@ _Note: I highly recommend running NodeListServer on a Linux server instance rath
 - **Open Source:** Mirror's own List Server is closed source. This is open source where you can look at my code and suggest improvements, fix bugs, etc.
 - **Fast:** NodeJS is quick and nimble, and so is this List Server.
 - **Unity WebGL support:** Since we're using HTTP calls, Unity WebGL games can use it this too. *Mirror's own List Server uses TCP, which makes it incompatible with WebGL games.*
+- **IP Address Blacklisting/Whitelisting:** Flick a boolean to true, slap your server IP addresses in the array. Bob's yer auntie.
 - NodeListServer is not just limited to games, you could use it for other non-Unity applications too!
 
 ## Non-Features
@@ -19,7 +20,6 @@ _Note: I highly recommend running NodeListServer on a Linux server instance rath
 NodeListServer does not have the following features:
 
 - **Matchmaking:** Too complicated for what this product does.
-- **IP Address Blacklisting/Whitelisting:** Add it yourself if you want it.
 - Anything else that it doesn't offer.
 
 ## Bug Fixes, New Features, etc
@@ -81,7 +81,7 @@ _Note: It's recommended to use a process manager like **PM2** which will allow y
 3. Try poking the server via `http://[your server ip]:8889` or whatever port you configured it as. If you're running it locally you can do `http://127.0.0.1:8889` with the shipped configuration.
 4. If you get a `400 Bad Request` from the address in step 3, that is normal - the server is functional. Nice job!
 
-_Example of a sucessful startup of NodeListServer:_
+_Example of a successful startup of NodeListServer (v1.0, v1.1+ greets you differently):_
 
 ```
 coburn@yamato:~/NodeListServer$ node ./listServer.js
@@ -92,7 +92,7 @@ Up and listening on HTTP port 8889!
 ```
 
 **To stop the server:**
-1. Simply CTRL+C the running Node Process, or you can use `kill`/`pkill` to kill the node instance. I'd recommend using `ps aux` and `kill <pid>` carefully, because `pkill node` would try to kill all node instances on your box.
+1. Simply CTRL+C the running Node Process, or you can use `kill`/`pkill` to kill the node instance. I'd recommend using `ps aux` and `kill <pid>` carefully, because `pkill node` would try to kill all node instances on your box - no bueno.
 
 ### Updating NodeListServer
 
@@ -131,29 +131,28 @@ _Note: These examples uses CURL on a Shell/Command Line. Adapt it to your enviro
 **Adding a server to the list**
 
 ```
-curl -X POST --data "serverUuid=[RANDOM UUID GOES HERE]&serverName=[GAME SERVER NAME GOES HERE]&serverPort=[GAME SERVER PORT GOES HERE]" [instance IP address]:[NodeListServer Port, default 8889]/add
+curl -X POST --data "serverUuid=[RANDOM UUID GOES HERE]&serverName=[GAME SERVER NAME GOES HERE]&serverPort=[GAME SERVER PORT GOES HERE]" http://127.0.0.1:8889/add
 ```
 
 **Getting a list of servers**
 
 ```
-curl [instance IP address]:[NodeListServer Port, default 8889]/list
-(an example instance address: 127.0.0.1:8889/list)
+curl http://127.0.0.1:8889/list
 ```
 
 **Removing a server from the list**
 
 ```
-curl -X POST --data "serverUuid=[UUID GOES HERE]" [instance IP address]:8889/remove
+curl -X POST --data "serverUuid=[UUID GOES HERE]" http://127.0.0.1:8889/remove
 ```
 
 ## Using NodeListServer with Unity
 
-It's pretty easy to use NodeListServer with Unity. You can use UnityWebRequest or another library (ie. Best HTTP Pro) to fetch the server lists and issue add/remove commands. As long as you can decode JSON it returns for the server list, you should be smooth sailing. 
+It's pretty easy to use NodeListServer with Unity. You can use UnityWebRequest or another library (ie. Best HTTP Pro) to fetch the server lists and issue add/remove commands. As long as you can decode JSON it returns for the server list, you should be fine.
 
 Important: **DO NOT** auto-assume that POST functions will be successful. **Always check the HTTP status code before doing anything with the returned response**. 
-- You will get HTTP Code 200 with a "OK" response from NodeListServer on success. 
-- Anything not 200 will be NodeListServer denying your request (you'll most likely get HTTP Code 400, Bad Request).
+- You will get HTTP code 200 with a "OK" response from NodeListServer on success. 
+- Anything not HTTP code 200 will be NodeListServer denying your request (you'll most likely get HTTP Code 400, Bad Request or if your IP is blocked, 403 Forbidden).
 
 As a bonus, here's some generic serializable classes that you can use to translate the JSON into something more usable:
 
@@ -165,7 +164,7 @@ public class NodeListServerListResponse {
 	// Number of known servers.
 	public int count;
 	// The container for the known servers.
-	public List<NodeListServerListEntry>() servers;
+	public List<NodeListServerListEntry> servers;
 }
 
 
