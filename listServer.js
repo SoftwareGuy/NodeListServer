@@ -55,6 +55,7 @@ expressApp.get("/", denyRequest)
 expressApp.get("/list", apiGetServerList)				// List of servers...
 expressApp.post("/add", apiAddToServerList)				// Add a server to the list...
 expressApp.post("/remove", apiRemoveFromServerList)		// Remove a server from the list...
+expressApp.post("/update", apiUpdateServerInList)
 
 // Finally, start the application
 console.log("Hello there, I'm NodeListServer aka Mirror List Server, NodeJS version by SoftwareGuy (Coburn)")
@@ -217,11 +218,45 @@ function apiUpdateServerInList(req, res) {
 	}
 	
 	// Okay, all those checks passed, let's do this.
-	var serverInQuestion = knownServers.filter(server => (server.Uuid == req.body.serverUuid));
-	
-	// But this endpoint is not fully implemented.
-	// TODO: Take the server in question out of the array, update various things, then push it back onto the array.
-	return 503;
+	// TODO: Improve this. This feels ugly hack tier and I feel it could be more elegant.
+	// If anyone has a PR to improves this, please send me a PR.
+	var serverInQuestion = knownServers.filter(server => (server.uuid == req.body.serverUuid));
+	var notTheServerInQuestion = knownServers.filter(server => (server.uuid != req.body.serverUuid));
+
+	// Debugging
+	// console.log(serverInQuestion)
+	// console.log(notTheServerInQuestion)
+
+	// I hate it when we get arrays back from that filter function...
+	// Pretty sure this could be improved. PR welcome.
+	var updatedServer = []
+	updatedServer['uuid'] = serverInQuestion[0].uuid
+	updatedServer['port'] = serverInQuestion[0].port
+
+	if(req.body.newServerName !== undefined) {
+		updatedServer['name'] = req.body.newServerName.trim()
+	} else {
+		updatedServer['name'] = serverInQuestion[0].name
+	}
+
+	if(req.body.newPlayerCount !== undefined) {
+		if(parseInt(req.body.newPlayerCount) == NaN) {
+			updatedServer['players'] = 0
+		} else {
+			updatedServer['players'] = parseInt(req.body.newPlayerCount)
+		}
+	} else {
+		updatedServer['players'] = serverInQuestion[0].players
+	}
+
+	// Debugging
+	// console.log(updatedServer)
+
+	// Push the server back onto the stack.
+	notTheServerInQuestion.push(updatedServer)
+	knownServers = notTheServerInQuestion
+
+	return res.send("OK")
 }
 
 // Checks if the server exists in our cache, by UUID.
