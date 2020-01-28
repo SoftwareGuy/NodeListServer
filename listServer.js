@@ -69,24 +69,20 @@ function denyRequest (req, res) {
 }
 
 // --- Functions --- //
+// API: Returns JSON list of servers.
 function apiGetServerList(req, res) {
 	if(req.method != "GET") {
 		console.log(`[WARN] Denied request from ${req.ip}; expected GET but got ${req.method} instead!`)		
 		return res.sendStatus(400)
 	}
 
-	// A client wants the server list.
-	// Compile it and send out via JSON.
+	// A client wants the server list. Compile it and send out via JSON.
 	var serverList = [];
 	
 	for (var i = 0, len = knownServers.length; i < len; i++) {
-		serverList.push({ 'ip': knownServers[i].ip, 'name': knownServers[i].name, 'port': parseInt(knownServers[i].port) })
+		serverList.push({ 'ip': knownServers[i].ip, 'name': knownServers[i].name, 'port': parseInt(knownServers[i].port), 'players': parseInt(knownServers[i].players) })
 	}
-	
-	// Top Secret Debugging Leftovers
-	// console.log(knownServers);
-	// console.log(serverList);
-	
+
 	// Temporary holder for the server list we're about to send.
 	var returnedServerList = {
 		'count': serverList.length,
@@ -98,46 +94,52 @@ function apiGetServerList(req, res) {
 	return res.json(returnedServerList)
 }
 
+// API: Add a server to the list.
 function apiAddToServerList(req, res) {
 	if(req.method != "POST") {
 		console.log(`[WARN] Denied request from ${req.ip}; expected POST but got ${req.method} instead!`)
 		return res.sendStatus(400)
 	}
 
+	// Are we using access control? If so, are they allowed to do this?
+	if(useAccessControl === true && !allowedServerAddresses.includes(req.ip)) {
+		// Not allowed.
+		console.log(`[WARN] Add server request blocked from ${req.ip}. They are not known in our allowed IPs list.`);
+		return res.sendStatus(403)
+	}
+	
 	// Sanity Checks
 	if(req.body === undefined) {
 		console.log("[WARN] Add server request had no proper data.");
 		return res.sendStatus(400)
 	}
-
-	// Top Secret Debugging Leftovers
-	// console.log(req.body)
-	// curl -X POST --data "serverUuid=ef914272-17e4-11ea-b0b7-fbbcad81d6d3&serverName=Test&serverPort=7777"
 	
 	if(req.body.serverUuid === undefined || req.body.serverName === undefined || req.body.serverPort === undefined) {
 		console.log(`[WARN] Add server request: No server UUID, name and/or port specified from ${req.ip}`);
 		return res.sendStatus(400)
 	}
-	
-	// Are we using access control? If so, are they allowed to do this?
-	if(useAccessControl === true && !allowedServerAddresses.includes(req.ip)) {
-		// Not allowed.
-		console.log(`[WARN] Add server request blocked from ${req.ip}. They are not known in our allowed IPs list.`);
-		return res.sendStatus(403);
-	}
-	
+		
 	// Add the server to the list.
-	// NOTE: we check if there's a UUID collision before we add the server, as this will help prevent
-	// malicious abuse or instances where the same UUID gets added twice, etc. 
-	if(apiDoesThisServerExist(req.body.serverUuid, knownServers)) {
+	
+	// Checkpoint 1: UUID Collision check
+	// If there's a UUID collision before we add the server then don't add the server to the cache, as this will help prevent
+	// malicious abuse or instances where the same UUID gets added twice, etc.
+	if(apiDoesServerExist(req.body.serverUuid)) {
 		// Collision - abort!
 		console.log(`[WARN] Server UUID collision. Not adding a new entry for '${req.body.serverUuid}' from ${req.ip}`)
 		return res.sendStatus(400)
 	}
-
+	
+	// Checkpoint 2: IP and Port collision check
+	// If there's already a server on this IP or Port then don't add the server to the cache. This will stop duplicates.
+	if(apiDoesThisServerExistByAddressPort(req.ip, req.body.serverPort)) {
+		// Collision - abort!
+		console.log(`[WARN] Server IP and Port Collision. Not adding a new entry for '${req.body.serverUuid}' from ${req.ip}`)
+		return res.sendStatus(400)
+	}
+	
 	// We'll get the IP address directly, don't worry about that
-	var newServer = { 'uuid': req.body.serverUuid, 'ip': req.ip, 'name': req.body.serverName, 'port': req.body.serverPort }
-
+	var newServer = { 'uuid': req.body.serverUuid, 'ip': req.ip, 'name': req.body.serverName, 'port': req.body.serverPort, 'players': 0 }
 
 	// Get to the bus, before we're outta time.
 	knownServers.push(newServer);
@@ -146,13 +148,21 @@ function apiAddToServerList(req, res) {
 	return res.send("OK")
 }
 
-function apiRemoveFromServerList(req, res) {	
+// API: Remove a server from the list.
+function apiRemoveFromServerList(req, res) {
 	// GET outta here.
 	if(req.method != "POST") {
 		console.log(`[WARN] Denied request from ${req.ip}; expected POST but got ${req.method} instead!`)
 		return res.sendStatus(400)
 	}
 
+	// Are we using access control? If so, are they allowed to do this?
+	if(useAccessControl === true && !allowedServerAddresses.includes(req.ip)) {
+		// Not allowed.
+		console.log(`[WARN] Remove server request blocked from ${req.ip}. They are not known in our allowed IPs list.`);
+		return res.sendStatus(403);
+	}
+	
 	// Lul, someone tried to send a empty request.
 	if(req.body === undefined) {
 		console.log(`[WARN] Denied request from ${req.ip}; no POST data was provided.`)
@@ -165,14 +175,8 @@ function apiRemoveFromServerList(req, res) {
 		return res.sendStatus(400)
 	}
 	
-	// Are we using access control? If so, are they allowed to do this?
-	if(useAccessControl === true && !allowedServerAddresses.includes(req.ip)) {
-		// Not allowed.
-		console.log(`[WARN] Add server request blocked from ${req.ip}. They are not known in our allowed IPs list.`);
-		return res.sendStatus(403);
-	}
 	
-	if(!apiDoesThisServerExist(req.body.serverUuid, knownServers)) {
+	if(!apiDoesServerExist(req.body.serverUuid, knownServers)) {
 		console.log(`[WARN] Cannot delete server '${req.body.serverUuid}' from cache (requested by ${req.ip}): No such server`)
 		return res.sendStatus(400)
 	} else {
@@ -185,10 +189,53 @@ function apiRemoveFromServerList(req, res) {
 	return res.sendStatus(501)
 }
 
-// Checks if the server exists in our cache.
-function apiDoesThisServerExist(uuid, array) {
-	var doesExist = knownServers.filter(server => server.uuid == uuid);
+// API: Update a server in the list.
+function apiUpdateServerInList(req, res) {
+	// Are we using access control? If so, are they allowed to do this?
+	if(useAccessControl === true && !allowedServerAddresses.includes(req.ip)) {
+		// Not allowed.
+		console.log(`[WARN] Update server request blocked from ${req.ip}. They are not known in our allowed IPs list.`)
+		return res.sendStatus(403)
+	}
 	
+	// Lul, someone tried to send a empty request.
+	if(req.body === undefined) {
+		console.log(`[WARN] Denied request from ${req.ip}; no POST data was provided.`)
+		return res.sendStatus(400)
+	}
+	
+	// Server isn't specified?	
+	if(req.body.serverUuid === undefined) {
+		console.log(`[WARN] Denied request from ${req.ip}; Server UUID was not provided.`)
+		return res.sendStatus(400)
+	}
+
+	// Does the server even exist?
+	if(!apiDoesServerExist(req.body.serverUuid)) {
+		console.log(`[WARN] Cannot update server '${req.body.serverUuid}' (requested by ${req.ip}): No such server`)
+		return res.sendStatus(400)
+	}
+	
+	// Okay, all those checks passed, let's do this.
+	var serverInQuestion = knownServers.filter(server => (server.Uuid == req.body.serverUuid));
+	
+	// But this endpoint is not fully implemented.
+	// TODO: Take the server in question out of the array, update various things, then push it back onto the array.
+	return 503;
+}
+
+// Checks if the server exists in our cache, by UUID.
+function apiDoesServerExist(uuid) {
+	var doesExist = knownServers.filter(server => server.uuid == uuid);
+	if(doesExist.length > 0) return true;
+	
+	// Fall though.
+	return false;
+}
+
+// Checks if the server exists in our cache, by IP address and port.
+function apiDoesThisServerExistByAddressPort(ipAddress, port) {
+	var doesExist = knownServers.filter(servers => (servers.ip == ipAddress && servers.port == port));
 	if(doesExist.length > 0) return true;
 	
 	// Fall though.

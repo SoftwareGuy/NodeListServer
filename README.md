@@ -4,6 +4,7 @@
 ![MIT Licensed](https://img.shields.io/badge/license-MIT-green.svg)
 
 This is a reimplementation of the Mirror List Server using NodeJS with 100% Fresh, Organic, Free-Range Australian Code. It runs on top of NodeJS 12.x LTS with Express as the light-weight web server.
+Please consider a donation (see the Ko-Fi button above) if this product is useful to you.
 
 _Note: I highly recommend running NodeListServer on a Linux server instance rather than Windows. If you are running NodeJS on Windows, please do your best to adapt various instructions to the Windows equivalents._
 
@@ -107,43 +108,54 @@ Up and listening on HTTP port 8889!
 
 ### API Endpoints
 
-**Endpoint `/` and other endpoints not defined**
+#### Endpoint `/` and other endpoints not defined**
 - These endpoint do nothing but return a error to try to deter people probing your installation of NodeListServer.
 
-**Endpoint `/add`**
-- **Method:** POST
-- **Required POST elements:** serverUuid (Server's UUID), serverName (Server's Name), serverPort (Server's Listening Port)
-- This is the endpoint that you use to add servers to the NodeListServer Cache.
-
-
-**Endpoint `/list`**
+#### Endpoint `/list`**
 - **Method:** GET
 - This is the endpoint you use to get a server list. Note that we return a server list that doesn't have all the cache fields like the Server UUID. The reason behind that is if we did, someone could take the UUID and pass it to the `remove` Endpoint. And we don't want that, do we?
 
-**Endpoint `/remove`**
+#### Endpoint `/add`**
 - **Method:** POST
-- **Required POST elements:** serverUuid (Server's UUID)
+- **Required POST elements:** serverUuid (Server UUID), serverName (Server Name), serverPort (Server Listening Port)
+- This is the endpoint that you use to add servers to the NodeListServer Cache.
+
+#### Endpoint `/remove`**
+- **Method:** POST
+- **Required POST elements:** serverUuid (Server UUID)
 - This is the endpoint you use to remove a server from the NodeListServer Cache. You need to supply the server UUID for it to be removed.
+
+#### Endpoint `/update`
+- **Method:** POST
+- **Required POST elements:** serverUuid (Server's UUID), newServerName (New server name), newPlayerCount (New player count)
 
 ### API Communication Examples
 _Note: These examples uses CURL on a Shell/Command Line. Adapt it to your environment respectively. I strongly recommend using a UUID that is randomly generated (either via `uuid` on Linux, `System.Guid` in .NET, or whatnot) to avoid collisions. NodeListServer **will not** accept duplicate servers with the same UUID._
 
-**Adding a server to the list**
 
-```
-curl -X POST --data "serverUuid=[RANDOM UUID GOES HERE]&serverName=[GAME SERVER NAME GOES HERE]&serverPort=[GAME SERVER PORT GOES HERE]" http://127.0.0.1:8889/add
-```
-
-**Getting a list of servers**
+#### Getting a list of servers
 
 ```
 curl http://127.0.0.1:8889/list
 ```
 
-**Removing a server from the list**
+#### Adding a server to the list
 
 ```
-curl -X POST --data "serverUuid=[UUID GOES HERE]" http://127.0.0.1:8889/remove
+curl -X POST --data "serverUuid=1234-5678-9012-3456&serverName=Debug Playground&serverPort=7777" http://127.0.0.1:8889/add
+```
+
+#### Removing a server from the list
+
+```
+curl -X POST --data "serverUuid=1234-5678-9012-3456" http://127.0.0.1:8889/remove
+```
+
+#### Updating a server in the list
+
+_Note: Implementation needs to be completed for this endpoint._
+```
+curl -X POST --data "serverUuid=1234-5678-9012-3456&newServerName=Waifu Dungeon&newPlayerCount=8" http://127.0.0.1:8889/update
 ```
 
 ## Using NodeListServer with Unity
@@ -153,9 +165,9 @@ It's pretty easy to use NodeListServer with Unity. You can use UnityWebRequest o
 Important: **DO NOT** auto-assume that POST functions will be successful. **Always check the HTTP status code before doing anything with the returned response**. 
 - You will get HTTP code 200 with a "OK" response from NodeListServer on success. 
 - Anything not HTTP code 200 will be NodeListServer denying your request (you'll most likely get HTTP Code 400, Bad Request or if your IP is blocked, 403 Forbidden).
+- Make sure you cache the Server UUID you use. You'll need to use that to tell the List Server what to do with your server entry. Without a valid Server UUID, it will refuse to do anything. I strongly recommend using GUIDs, which are unique and if you're using Mono or .NET, you can just use System.Guid.newGuid() to generate a random one.
 
 As a bonus, here's some generic serializable classes that you can use to translate the JSON into something more usable:
-
 
 ```csharp
 
@@ -170,17 +182,20 @@ public class NodeListServerListResponse {
 
 [Serializable]
 public class NodeListServerListEntry {
-	// IP address. Beware: Might be IPv6 format, and require you to chop off the leading "::" part. YMMV.
+	// IP address. Beware: Might be IPv6 format, and require you to chop off the leading "::ffff:" part. YMMV.
 	public string ip;
 	// Name of the server.
 	public string name;
 	// Port of the server.
 	public int port;
+	// Number of players on the server.
+	public int players;
 }
 
 ```
 
 Make sure you POST the correct data when you want to add/remove servers. See API Endpoints for more details on the required POST fields.
+I'll most likely hack up the Mirror List Server example that ships with Mirror to support this list server in the near future.
 
 ## Credits
 
