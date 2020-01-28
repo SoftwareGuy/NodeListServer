@@ -108,19 +108,19 @@ Up and listening on HTTP port 8889!
 
 ### API Endpoints
 
-#### Endpoint `/` and other endpoints not defined**
+#### Endpoint `/` and other endpoints not defined
 - These endpoint do nothing but return a error to try to deter people probing your installation of NodeListServer.
 
-#### Endpoint `/list`**
+#### Endpoint `/list`
 - **Method:** GET
 - This is the endpoint you use to get a server list. Note that we return a server list that doesn't have all the cache fields like the Server UUID. The reason behind that is if we did, someone could take the UUID and pass it to the `remove` Endpoint. And we don't want that, do we?
 
-#### Endpoint `/add`**
+#### Endpoint `/add`
 - **Method:** POST
 - **Required POST elements:** serverUuid (Server UUID), serverName (Server Name), serverPort (Server Listening Port)
 - This is the endpoint that you use to add servers to the NodeListServer Cache.
 
-#### Endpoint `/remove`**
+#### Endpoint `/remove`
 - **Method:** POST
 - **Required POST elements:** serverUuid (Server UUID)
 - This is the endpoint you use to remove a server from the NodeListServer Cache. You need to supply the server UUID for it to be removed.
