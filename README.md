@@ -127,7 +127,11 @@ Up and listening on HTTP port 8889!
 
 #### Endpoint `/update`
 - **Method:** POST
-- **Required POST elements:** serverUuid (Server's UUID), newServerName (New server name), newPlayerCount (New player count)
+- **Required POST elements:** serverUuid (Server's UUID)
+- **Optional POST elements:** newServerName (New server name), newPlayerCount (New player count)
+
+This endpoint is special as it allows you to rename and change the player count of your server. So, if someone connected, you can increase the player count to the new count. Omit `newServerName` if you do not wish to change the server's registered name.
+_In the future this endpoint will be able to be used for a "keep alive" mechanism so that dead servers can get cleaned upon next list server request._
 
 ### API Communication Examples
 _Note: These examples uses CURL on a Shell/Command Line. Adapt it to your environment respectively. I strongly recommend using a UUID that is randomly generated (either via `uuid` on Linux, `System.Guid` in .NET, or whatnot) to avoid collisions. NodeListServer **will not** accept duplicate servers with the same UUID._
@@ -153,7 +157,6 @@ curl -X POST --data "serverUuid=1234-5678-9012-3456" http://127.0.0.1:8889/remov
 
 #### Updating a server in the list
 
-_Note: Implementation needs to be completed for this endpoint._
 ```
 curl -X POST --data "serverUuid=1234-5678-9012-3456&newServerName=Waifu Dungeon&newPlayerCount=8" http://127.0.0.1:8889/update
 ```
@@ -165,7 +168,7 @@ It's pretty easy to use NodeListServer with Unity. You can use UnityWebRequest o
 Important: **DO NOT** auto-assume that POST functions will be successful. **Always check the HTTP status code before doing anything with the returned response**. 
 - You will get HTTP code 200 with a "OK" response from NodeListServer on success. 
 - Anything not HTTP code 200 will be NodeListServer denying your request (you'll most likely get HTTP Code 400, Bad Request or if your IP is blocked, 403 Forbidden).
-- Make sure you cache the Server UUID you use. You'll need to use that to tell the List Server what to do with your server entry. Without a valid Server UUID, it will refuse to do anything. I strongly recommend using GUIDs, which are unique and if you're using Mono or .NET, you can just use System.Guid.newGuid() to generate a random one.
+- Make sure you cache the Server UUID you use. You'll need to use that to tell the List Server what to do with your server entry. Without a valid Server UUID, it will refuse to do anything. I strongly recommend using GUIDs, which are unique and if you're using Mono or .NET, you can just use `System.Guid.newGuid()` to generate a random one.
 
 As a bonus, here's some generic serializable classes that you can use to translate the JSON into something more usable:
 
