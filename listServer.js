@@ -1,4 +1,4 @@
-/* eslint no-console: ["error", { allow: ["info", "warn", "error"] }] */
+/* eslint no-console: ["error", { allow: ["log", "warn", "error"] }] */
 // NodeJS Implementation of Mirror Network List Server
 // Developed by Matt Coburn (SoftwareGuy/Coburn64)
 // --------------
@@ -73,7 +73,7 @@ function denyRequest (req, res) {
 // --- Functions --- //
 // API: Returns JSON list of servers.
 function apiGetServerList(req, res) {	
-	if(req.body.serverKey === undefined || apiCheckKey(req.body.serverKey))
+	if(typeof req.body.serverKey === 'undefined' || apiCheckKey(req.body.serverKey))
 	{
 		console.warn(`${req.ip} tried to send request with wrong key: ${req.body.serverKey}`);
 		return res.sendStatus(400);
@@ -81,7 +81,7 @@ function apiGetServerList(req, res) {
 	else
 	{
 		// Shows if keys match for those getting list server details.
-		console.log(`[INFO] Keys match: Client '${req.body.serverKey}' vs Server '${secureLSKey}'`);
+		console.log(`[INFO] Client key from ${req.ip} is correct: '${req.body.serverKey}'`);
 	}
 
 	// A client wants the server list. Compile it and send out via JSON.
@@ -104,7 +104,7 @@ function apiGetServerList(req, res) {
 
 // API: Add a server to the list.
 function apiAddToServerList(req, res) {
-	if(req.body.serverKey === undefined || apiCheckKey(req.body.serverKey))
+	if(typeof req.body.serverKey === 'undefined' || apiCheckKey(req.body.serverKey))
 	{
 		console.warn(`${req.ip} tried to send request with wrong key: ${req.body.serverKey}`);
 		return res.sendStatus(400);
@@ -118,12 +118,12 @@ function apiAddToServerList(req, res) {
 	}
 	
 	// Sanity Checks
-	if(req.body === undefined) {
-		console.log("[WARN] Add Server request had no proper data.");
+	if(typeof req.body === 'undefined') {
+		console.warn("Add Server request had no proper data.");
 		return res.sendStatus(400);
 	}
 	
-	if(req.body.serverUuid === undefined || req.body.serverName === undefined || req.body.serverPort === undefined) {
+	if(typeof req.body.serverUuid === 'undefined' || typeof req.body.serverName === 'undefined' || typeof req.body.serverPort === 'undefined') {
 		console.warn(`Add server request: No server UUID, name and/or port specified from ${req.ip}`);
 		return res.sendStatus(400);
 	}
@@ -159,7 +159,7 @@ function apiAddToServerList(req, res) {
 
 // API: Remove a server from the list.
 function apiRemoveFromServerList(req, res) {
-	if(req.body.serverKey === undefined || apiCheckKey(req.body.serverKey))
+	if(typeof req.body.serverKey === 'undefined' || apiCheckKey(req.body.serverKey))
 	{
 		console.warn(`${req.ip} tried to send request with wrong key: ${req.body.serverKey}`);
 		return res.sendStatus(400);
@@ -173,13 +173,13 @@ function apiRemoveFromServerList(req, res) {
 	}
 	
 	// Lul, someone tried to send a empty request.
-	if(req.body === undefined) {
+	if(typeof req.body === 'undefined') {
 		console.warn(`Denied request from ${req.ip}; no POST data was provided.`);
 		return res.sendStatus(400);
 	}
 
 	// Server isn't specified?	
-	if(req.body.serverUuid === undefined) {
+	if(typeof req.body.serverUuid === 'undefined') {
 		console.warn(`Denied request from ${req.ip}; Server UUID was not provided.`);
 		return res.sendStatus(400);
 	}
@@ -207,20 +207,20 @@ function apiUpdateServerInList(req, res) {
 		return res.sendStatus(403);
 	}
 	
-	if(req.body.serverKey === undefined || apiCheckKey(req.body.serverKey))
+	if(typeof req.body.serverKey === 'undefined' || apiCheckKey(req.body.serverKey))
 	{
 		console.warn(`${req.ip} tried to send request with wrong key: ${req.body.serverKey}`);
 		return res.sendStatus(400);
 	}
 	
 	// Lul, someone tried to send a empty request.
-	if(req.body === undefined) {
+	if(typeof req.body === 'undefined') {
 		console.warn(`Denied request from ${req.ip}; no POST data was provided.`);
 		return res.sendStatus(400);
 	}
 	
 	// Server isn't specified?	
-	if(req.body.serverUuid === undefined) {
+	if(typeof req.body.serverUuid === 'undefined') {
 		console.warn(`Denied request from ${req.ip}; Server UUID was not provided.`);
 		return res.sendStatus(400);
 	}
@@ -244,24 +244,24 @@ function apiUpdateServerInList(req, res) {
 	// I hate it when we get arrays back from that filter function...
 	// Pretty sure this could be improved. PR welcome.
 	var updatedServer = [];
-	updatedServer['uuid'] = serverInQuestion[0].uuid;
-	updatedServer['port'] = serverInQuestion[0].port;
-	updatedServer['ip'] = serverInQuestion[0].ip;
+	updatedServer["uuid"] = serverInQuestion[0].uuid;
+	updatedServer["port"] = serverInQuestion[0].port;
+	updatedServer["ip"] = serverInQuestion[0].ip;
 
-	if(req.body.newServerName !== undefined) {
-		updatedServer['name'] = req.body.newServerName.trim();
+	if(typeof req.body.newServerName !== 'undefined') {
+		updatedServer["name"] = req.body.newServerName.trim();
 	} else {
-		updatedServer['name'] = serverInQuestion[0].name;
+		updatedServer["name"] = serverInQuestion[0].name;
 	}
 
-	if(req.body.newPlayerCount !== undefined) {
-		if(parseInt(req.body.newPlayerCount) == NaN) {
-			updatedServer['players'] = 0;
+	if(typeof req.body.newPlayerCount !== 'undefined') {
+		if(parseInt(req.body.newPlayerCount, 10) == NaN) {
+			updatedServer["players"] = 0;
 		} else {
-			updatedServer['players'] = parseInt(req.body.newPlayerCount);
+			updatedServer["players"] = parseInt(req.body.newPlayerCount, 10);
 		}
 	} else {
-		updatedServer['players'] = serverInQuestion[0].players;
+		updatedServer["players"] = serverInQuestion[0].players;
 	}
 
 	// Debugging
