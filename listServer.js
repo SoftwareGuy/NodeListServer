@@ -30,6 +30,10 @@ const useAccessControl = false
 // to the Express Web Server.
 const allowedServerAddresses = [ "::ffff:127.0.0.1" ]
 
+// Secure list server Key, offers an increase of protection, send through unity
+// change default example, can be any string combination. (In Unity: form.AddField("serverKey", "666"); )
+const secureLSKey = "666"
+
 // ---------------
 // STOP! Do not edit below this line unless you know what you're doing,
 // or you are experienced with NodeJS (Javascript) programming. You 
@@ -52,7 +56,7 @@ var knownServers = []
 
 // Callbacks to various functions, leave this alone unless you know what you're doing.
 expressApp.get("/", denyRequest)
-expressApp.get("/list", apiGetServerList)				// List of servers...
+expressApp.post("/list", apiGetServerList)				// List of servers...
 expressApp.post("/add", apiAddToServerList)				// Add a server to the list...
 expressApp.post("/remove", apiRemoveFromServerList)		// Remove a server from the list...
 expressApp.post("/update", apiUpdateServerInList)
@@ -72,16 +76,27 @@ function denyRequest (req, res) {
 // --- Functions --- //
 // API: Returns JSON list of servers.
 function apiGetServerList(req, res) {
-	if(req.method != "GET") {
+	if(req.method != "POST") {
 		console.log(`[WARN] Denied request from ${req.ip}; expected GET but got ${req.method} instead!`)		
 		return res.sendStatus(400)
+	}
+	
+	if(req.body.serverKey === undefined || req.body.serverKey != secureLSKey)
+	{
+		console.log(`[WARN] Keys do not match ${req.body.serverKey} ${secureLSKey}`);
+		return res.sendStatus(400)
+	}
+	else
+	{
+		//Shows if keys match for those getting list server details.
+		console.log(`[WARN] Keys match ${req.body.serverKey} ${secureLSKey}`);
 	}
 
 	// A client wants the server list. Compile it and send out via JSON.
 	var serverList = [];
 	
 	for (var i = 0, len = knownServers.length; i < len; i++) {
-		serverList.push({ 'ip': knownServers[i].ip, 'name': knownServers[i].name, 'port': parseInt(knownServers[i].port), 'players': parseInt(knownServers[i].players) })
+		serverList.push({ 'ip': knownServers[i].ip, 'name': knownServers[i].name, 'port': parseInt(knownServers[i].port), 'players': parseInt(knownServers[i].players)})
 	}
 
 	// Temporary holder for the server list we're about to send.
@@ -99,6 +114,12 @@ function apiGetServerList(req, res) {
 function apiAddToServerList(req, res) {
 	if(req.method != "POST") {
 		console.log(`[WARN] Denied request from ${req.ip}; expected POST but got ${req.method} instead!`)
+		return res.sendStatus(400)
+	}
+	
+	if(req.body.serverKey === undefined || req.body.serverKey != secureLSKey)
+	{
+		console.log(`[WARN] Keys do not match ${req.body.serverKey} ${secureLSKey}`);
 		return res.sendStatus(400)
 	}
 
@@ -140,7 +161,7 @@ function apiAddToServerList(req, res) {
 	}
 	
 	// We'll get the IP address directly, don't worry about that
-	var newServer = { 'uuid': req.body.serverUuid, 'ip': req.ip, 'name': req.body.serverName, 'port': req.body.serverPort, 'players': 0 }
+	var newServer = { 'uuid': req.body.serverUuid, 'ip': req.ip, 'name': req.body.serverName, 'port': req.body.serverPort, 'players': req.body.serverPlayers }
 
 	// Get to the bus, before we're outta time.
 	knownServers.push(newServer);
@@ -154,6 +175,12 @@ function apiRemoveFromServerList(req, res) {
 	// GET outta here.
 	if(req.method != "POST") {
 		console.log(`[WARN] Denied request from ${req.ip}; expected POST but got ${req.method} instead!`)
+		return res.sendStatus(400)
+	}
+	
+	if(req.body.serverKey === undefined || req.body.serverKey != secureLSKey)
+	{
+		console.log(`[WARN] Keys do not match ${req.body.serverKey} ${secureLSKey}`);
 		return res.sendStatus(400)
 	}
 
@@ -199,6 +226,12 @@ function apiUpdateServerInList(req, res) {
 		return res.sendStatus(403)
 	}
 	
+	if(req.body.serverKey === undefined || req.body.serverKey != secureLSKey)
+	{
+		console.log(`[WARN] Keys do not match ${req.body.serverKey} ${secureLSKey}`);
+		return res.sendStatus(400)
+	}
+	
 	// Lul, someone tried to send a empty request.
 	if(req.body === undefined) {
 		console.log(`[WARN] Denied request from ${req.ip}; no POST data was provided.`)
@@ -232,6 +265,7 @@ function apiUpdateServerInList(req, res) {
 	var updatedServer = []
 	updatedServer['uuid'] = serverInQuestion[0].uuid
 	updatedServer['port'] = serverInQuestion[0].port
+	updatedServer['ip'] = serverInQuestion[0].ip
 
 	if(req.body.newServerName !== undefined) {
 		updatedServer['name'] = req.body.newServerName.trim()
