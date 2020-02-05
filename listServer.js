@@ -155,7 +155,7 @@ function apiAddToServerList(req, res) {
 	// We'll get the IP address directly, don't worry about that
 	var newServer = { 
 		"uuid": req.body.serverUuid, 
-		"ip:" req.ip, 
+		"ip": req.ip, 
 		"name": req.body.serverName, 
 		"port": req.body.serverPort, 
 		"players": req.body.serverPlayers
