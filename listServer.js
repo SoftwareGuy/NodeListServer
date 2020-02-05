@@ -96,7 +96,7 @@ function apiGetServerList(req, res) {
 	var serverList = [];
 	
 	for (var i = 0, len = knownServers.length; i < len; i++) {
-		serverList.push({ 'ip': knownServers[i].ip, 'name': knownServers[i].name, 'port': parseInt(knownServers[i].port), 'players': parseInt(knownServers[i].players), 'serverKey': knownServers[i].serverKey })
+		serverList.push({ 'ip': knownServers[i].ip, 'name': knownServers[i].name, 'port': parseInt(knownServers[i].port), 'players': parseInt(knownServers[i].players)})
 	}
 
 	// Temporary holder for the server list we're about to send.
@@ -161,7 +161,7 @@ function apiAddToServerList(req, res) {
 	}
 	
 	// We'll get the IP address directly, don't worry about that
-	var newServer = { 'uuid': req.body.serverUuid, 'ip': req.ip, 'name': req.body.serverName, 'port': req.body.serverPort, 'players': req.body.serverPlayers, 'serverKey': req.body.serverKey }
+	var newServer = { 'uuid': req.body.serverUuid, 'ip': req.ip, 'name': req.body.serverName, 'port': req.body.serverPort, 'players': req.body.serverPlayers }
 
 	// Get to the bus, before we're outta time.
 	knownServers.push(newServer);
