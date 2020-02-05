@@ -52,25 +52,15 @@ expressApp.use(bodyParser.urlencoded({ extended: true }));
 // Server memory array cache.
 var knownServers = [];
 
-// Callbacks to various functions, leave this alone unless you know what you're doing.
-expressApp.get("/", denyRequest);
-expressApp.post("/list", apiGetServerList);					// List of servers...
-expressApp.post("/add", apiAddToServerList);				// Add a server to the list...
-expressApp.post("/remove", apiRemoveFromServerList);		// Remove a server from the list...
-expressApp.post("/update", apiUpdateServerInList);
 
-// Finally, start the application
-console.log("Hello there, I'm NodeListServer aka Mirror List Server, NodeJS version by SoftwareGuy (Coburn)");
-console.log("Report bugs and fork me on GitHub: https://github.com/SoftwareGuy/NodeListServer");
 
-expressApp.listen(listenPort, () => console.log(`Up and listening on HTTP port ${listenPort}!`));
-
+// --- Functions --- //
+// Generic function that denies requests.
 function denyRequest (req, res) {
 	console.warn(`Denied request from ${req.ip}. Method: ${req.method}; Path: ${req.path}`);
 	return res.sendStatus(400);
 }
 
-// --- Functions --- //
 // API: Returns JSON list of servers.
 function apiGetServerList(req, res) {	
 	if(typeof req.body.serverKey === "undefined" || apiCheckKey(req.body.serverKey))
@@ -310,3 +300,19 @@ function apiCheckKey(clientKey) {
 		return false;
 	}
 }
+
+// -- Start the application -- //
+// Coburn: Moved the actual startup routines here to help boost Codacy's opinion.
+// Callbacks to various functions, leave this alone unless you know what you're doing.
+expressApp.get("/", denyRequest);
+expressApp.post("/list", apiGetServerList);					// List of servers...
+expressApp.post("/add", apiAddToServerList);				// Add a server to the list...
+expressApp.post("/remove", apiRemoveFromServerList);		// Remove a server from the list...
+expressApp.post("/update", apiUpdateServerInList);
+
+// Finally, start the application
+console.log("Hello there, I'm NodeListServer aka Mirror List Server, NodeJS version by SoftwareGuy (Coburn)");
+console.log("Report bugs and fork me on GitHub: https://github.com/SoftwareGuy/NodeListServer");
+
+expressApp.listen(listenPort, () => console.log(`Up and listening on HTTP port ${listenPort}!`));
+
