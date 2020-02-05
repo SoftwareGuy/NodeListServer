@@ -40,9 +40,9 @@ const secureLSKey = "NodeListServerDefaultKey";
 // fix it yourself, you may be up the creek without a paddle.
 // ---------------
 // Constant references to various modules.
-const expressServer = require('express');
+const expressServer = require("express");
 const expressApp = expressServer();
-const bodyParser = require('body-parser');
+const bodyParser = require("body-parser");
 
 // Let Express use Body Parser. Leave this alone.
 // We'll mainly use the JSON version.
@@ -73,7 +73,7 @@ function denyRequest (req, res) {
 // --- Functions --- //
 // API: Returns JSON list of servers.
 function apiGetServerList(req, res) {	
-	if(typeof req.body.serverKey === 'undefined' || apiCheckKey(req.body.serverKey))
+	if(typeof req.body.serverKey === "undefined" || apiCheckKey(req.body.serverKey))
 	{
 		console.warn(`${req.ip} tried to send request with wrong key: ${req.body.serverKey}`);
 		return res.sendStatus(400);
@@ -88,14 +88,19 @@ function apiGetServerList(req, res) {
 	var serverList = [];
 	
 	for (var i = 0, len = knownServers.length; i < len; i++) {
-		serverList.push({ 'ip': knownServers[i].ip, 'name': knownServers[i].name, 'port': parseInt(knownServers[i].port, 10), 'players': parseInt(knownServers[i].players, 10)});
+		serverList.push({ 
+			"ip": knownServers[i].ip, 
+			"name": knownServers[i].name, 
+			"port": parseInt(knownServers[i].port, 10), 
+			"players": parseInt(knownServers[i].players, 10)
+		});
 	}
 
 	// Temporary holder for the server list we're about to send.
 	var returnedServerList = {
 		'count': serverList.length,
 		'servers': serverList,
-	}
+	};
 
 	// console.log(returnedServerList)
 	console.log(`[INFO] Sending server list to ${req.ip}.`);
@@ -104,7 +109,7 @@ function apiGetServerList(req, res) {
 
 // API: Add a server to the list.
 function apiAddToServerList(req, res) {
-	if(typeof req.body.serverKey === 'undefined' || apiCheckKey(req.body.serverKey))
+	if(typeof req.body.serverKey === "undefined" || apiCheckKey(req.body.serverKey))
 	{
 		console.warn(`${req.ip} tried to send request with wrong key: ${req.body.serverKey}`);
 		return res.sendStatus(400);
@@ -118,12 +123,12 @@ function apiAddToServerList(req, res) {
 	}
 	
 	// Sanity Checks
-	if(typeof req.body === 'undefined') {
+	if(typeof req.body === "undefined") {
 		console.warn("Add Server request had no proper data.");
 		return res.sendStatus(400);
 	}
 	
-	if(typeof req.body.serverUuid === 'undefined' || typeof req.body.serverName === 'undefined' || typeof req.body.serverPort === 'undefined') {
+	if(typeof req.body.serverUuid === "undefined" || typeof req.body.serverName === "undefined" || typeof req.body.serverPort === "undefined") {
 		console.warn(`Add server request: No server UUID, name and/or port specified from ${req.ip}`);
 		return res.sendStatus(400);
 	}
@@ -148,7 +153,13 @@ function apiAddToServerList(req, res) {
 	}
 	
 	// We'll get the IP address directly, don't worry about that
-	var newServer = { 'uuid': req.body.serverUuid, 'ip': req.ip, 'name': req.body.serverName, 'port': req.body.serverPort, 'players': req.body.serverPlayers };
+	var newServer = { 
+		"uuid": req.body.serverUuid, 
+		"ip:" req.ip, 
+		"name": req.body.serverName, 
+		"port": req.body.serverPort, 
+		"players": req.body.serverPlayers
+	};
 
 	// Push, but don't shove it onto stack.
 	knownServers.push(newServer);
@@ -159,7 +170,7 @@ function apiAddToServerList(req, res) {
 
 // API: Remove a server from the list.
 function apiRemoveFromServerList(req, res) {
-	if(typeof req.body.serverKey === 'undefined' || apiCheckKey(req.body.serverKey))
+	if(typeof req.body.serverKey === "undefined" || apiCheckKey(req.body.serverKey))
 	{
 		console.warn(`${req.ip} tried to send request with wrong key: ${req.body.serverKey}`);
 		return res.sendStatus(400);
@@ -173,13 +184,13 @@ function apiRemoveFromServerList(req, res) {
 	}
 	
 	// Lul, someone tried to send a empty request.
-	if(typeof req.body === 'undefined') {
+	if(typeof req.body === "undefined") {
 		console.warn(`Denied request from ${req.ip}; no POST data was provided.`);
 		return res.sendStatus(400);
 	}
 
 	// Server isn't specified?	
-	if(typeof req.body.serverUuid === 'undefined') {
+	if(typeof req.body.serverUuid === "undefined") {
 		console.warn(`Denied request from ${req.ip}; Server UUID was not provided.`);
 		return res.sendStatus(400);
 	}
@@ -189,13 +200,10 @@ function apiRemoveFromServerList(req, res) {
 		console.warn(`Cannot delete server '${req.body.serverUuid}' from cache (requested by ${req.ip}): No such server`);
 		return res.sendStatus(400);
 	} else {
-		knownServers = knownServers.filter(server => server.uuid != req.body.serverUuid);
+		knownServers = knownServers.filter((server) => server.uuid !== req.body.serverUuid);
 		console.log(`[INFO] Deleted server '${req.body.serverUuid}' from cache (requested by ${req.ip})`);
 		return res.send("OK");
 	}
-	
-	// Fail safe.
-	return res.sendStatus(501);
 }
 
 // API: Update a server in the list.
@@ -207,20 +215,20 @@ function apiUpdateServerInList(req, res) {
 		return res.sendStatus(403);
 	}
 	
-	if(typeof req.body.serverKey === 'undefined' || apiCheckKey(req.body.serverKey))
+	if(typeof req.body.serverKey === "undefined" || apiCheckKey(req.body.serverKey))
 	{
 		console.warn(`${req.ip} tried to send request with wrong key: ${req.body.serverKey}`);
 		return res.sendStatus(400);
 	}
 	
 	// Lul, someone tried to send a empty request.
-	if(typeof req.body === 'undefined') {
+	if(typeof req.body === "undefined") {
 		console.warn(`Denied request from ${req.ip}; no POST data was provided.`);
 		return res.sendStatus(400);
 	}
 	
 	// Server isn't specified?	
-	if(typeof req.body.serverUuid === 'undefined') {
+	if(typeof req.body.serverUuid === "undefined") {
 		console.warn(`Denied request from ${req.ip}; Server UUID was not provided.`);
 		return res.sendStatus(400);
 	}
@@ -234,8 +242,8 @@ function apiUpdateServerInList(req, res) {
 	// Okay, all those checks passed, let's do this.
 	// TODO: Improve this. This feels ugly hack tier and I feel it could be more elegant.
 	// If anyone has a PR to improves this, please send me a PR.
-	var serverInQuestion = knownServers.filter(server => (server.uuid == req.body.serverUuid));
-	var notTheServerInQuestion = knownServers.filter(server => (server.uuid != req.body.serverUuid));
+	var serverInQuestion = knownServers.filter((server) => (server.uuid === req.body.serverUuid));
+	var notTheServerInQuestion = knownServers.filter(server => (server.uuid !== req.body.serverUuid));
 
 	// Debugging
 	// console.log(serverInQuestion)
@@ -248,14 +256,14 @@ function apiUpdateServerInList(req, res) {
 	updatedServer["port"] = serverInQuestion[0].port;
 	updatedServer["ip"] = serverInQuestion[0].ip;
 
-	if(typeof req.body.newServerName !== 'undefined') {
+	if(typeof req.body.newServerName !== "undefined") {
 		updatedServer["name"] = req.body.newServerName.trim();
 	} else {
 		updatedServer["name"] = serverInQuestion[0].name;
 	}
 
-	if(typeof req.body.newPlayerCount !== 'undefined') {
-		if(parseInt(req.body.newPlayerCount, 10) == NaN) {
+	if(typeof req.body.newPlayerCount !== "undefined") {
+		if(isNaN(parseInt(req.body.newPlayerCount, 10))) {
 			updatedServer["players"] = 0;
 		} else {
 			updatedServer["players"] = parseInt(req.body.newPlayerCount, 10);
@@ -271,12 +279,12 @@ function apiUpdateServerInList(req, res) {
 	notTheServerInQuestion.push(updatedServer);
 	knownServers = notTheServerInQuestion;
 
-	return res.send("OK")
+	return res.send("OK");
 }
 
 // Checks if the server exists in our cache, by UUID.
 function apiDoesServerExist(uuid) {
-	var doesExist = knownServers.filter(server => server.uuid == uuid);
+	var doesExist = knownServers.filter((server) => server.uuid == uuid);
 	if(doesExist.length > 0) return true;
 	
 	// Fall though.
@@ -285,15 +293,20 @@ function apiDoesServerExist(uuid) {
 
 // Checks if the server exists in our cache, by IP address and port.
 function apiDoesThisServerExistByAddressPort(ipAddress, port) {
-	var doesExist = knownServers.filter(servers => (servers.ip == ipAddress && servers.port == port));
-	if(doesExist.length > 0) return true;
-	
+	var doesExist = knownServers.filter((servers) => (servers.ip === ipAddress && servers.port === port));
+	if(doesExist.length > 0) {
+		return true;
+	}
+
 	// Fall though.
 	return false;
 }
 
 // Checks to see if the client specified key matches.
 function apiCheckKey(clientKey) {
-	if(clientKey == secureLSKey) return true;
-	else return false;
+	if(clientKey === secureLSKey) {
+		return true;
+	} else  {
+		return false;
+	}
 }
