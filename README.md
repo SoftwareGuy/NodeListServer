@@ -101,6 +101,7 @@ Up and listening on HTTP port 8889!
     -   Note that if you obtained the source via a ZIP archive, then you're not going to be able to just execute `git pull`. Download and extract a new ZIP archive of this repository instead.
 3.  New commits will update your installation of NodeListServer after running `git pull`.
     -   Rectify any pull merge errors if you have any (and you should know how to do this).
+	
 4.  Start NodeListServer again.
 
 ## The API Explained
