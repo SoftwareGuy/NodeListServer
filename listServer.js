@@ -66,7 +66,7 @@ function apiCheckKey(clientKey) {
 // - Sanity Checking
 // apiDoesServerExist: Checks if the server exists in our cache, by UUID.
 function apiDoesServerExist(uuid) {
-	var doesExist = knownServers.filter((server) => server.uuid == uuid);
+	var doesExist = knownServers.filter((server) => server.uuid === uuid);
 	if(doesExist.length > 0) {
 		return true;
 	}
@@ -109,15 +109,14 @@ function apiGetServerList(req, res) {
 	// A client wants the server list. Compile it and send out via JSON.
 	var serverList = [];
 	
-	// TODO: Generic Object Injection Sink warning in Codacy
-	for (var i = 0, len = knownServers.length; i < len; i++) {
+	knownServers.forEach((knownServer) => {
 		serverList.push({ 
-			"ip": knownServers[i].ip, 
-			"name": knownServers[i].name, 
-			"port": parseInt(knownServers[i].port, 10), 
-			"players": parseInt(knownServers[i].players, 10)
+			"ip": knownServer.ip, 
+			"name": knownServer.name, 
+			"port": parseInt(knownServer.port, 10), 
+			"players": parseInt(knownServer.players, 10)
 		});
-	}
+	});
 
 	// Temporary holder for the server list we're about to send.
 	var returnedServerList = {
