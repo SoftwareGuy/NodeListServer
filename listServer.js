@@ -52,16 +52,48 @@ expressApp.use(bodyParser.urlencoded({ extended: true }));
 // Server memory array cache.
 var knownServers = [];
 
-
-
 // --- Functions --- //
-// Generic function that denies requests.
+// - Authentication
+// apiCheckKey: Checks to see if the client specified key matches.
+function apiCheckKey(clientKey) {
+	if(clientKey === secureLSKey) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+// - Sanity Checking
+// apiDoesServerExist: Checks if the server exists in our cache, by UUID.
+function apiDoesServerExist(uuid) {
+	var doesExist = knownServers.filter((server) => server.uuid == uuid);
+	if(doesExist.length > 0) {
+		return true;
+	}
+	
+	// Fall though.
+	return false;
+}
+
+// apiDoesThisServerExistByAddressPort: Checks if the server exists in our cache, by IP address and port.
+function apiDoesThisServerExistByAddressPort(ipAddress, port) {
+	var doesExist = knownServers.filter((servers) => (servers.ip === ipAddress && servers.port === port));
+	if(doesExist.length > 0) {
+		return true;
+	}
+
+	// Fall though.
+	return false;
+}
+
+// -- Request Handling
+// denyRequest: Generic function that denies requests.
 function denyRequest (req, res) {
 	console.warn(`Denied request from ${req.ip}. Method: ${req.method}; Path: ${req.path}`);
 	return res.sendStatus(400);
 }
 
-// API: Returns JSON list of servers.
+// apiGetServerList: This handler returns a JSON array of servers to the clients.
 function apiGetServerList(req, res) {	
 	if(typeof req.body.serverKey === "undefined" || apiCheckKey(req.body.serverKey))
 	{
@@ -77,6 +109,7 @@ function apiGetServerList(req, res) {
 	// A client wants the server list. Compile it and send out via JSON.
 	var serverList = [];
 	
+	// TODO: Generic Object Injection Sink warning in Codacy
 	for (var i = 0, len = knownServers.length; i < len; i++) {
 		serverList.push({ 
 			"ip": knownServers[i].ip, 
@@ -88,8 +121,8 @@ function apiGetServerList(req, res) {
 
 	// Temporary holder for the server list we're about to send.
 	var returnedServerList = {
-		'count': serverList.length,
-		'servers': serverList,
+		"count": serverList.length,
+		"servers": serverList,
 	};
 
 	// console.log(returnedServerList)
@@ -97,7 +130,7 @@ function apiGetServerList(req, res) {
 	return res.json(returnedServerList);
 }
 
-// API: Add a server to the list.
+// apiAddToServerList: Adds a server to the list.
 function apiAddToServerList(req, res) {
 	if(typeof req.body.serverKey === "undefined" || apiCheckKey(req.body.serverKey))
 	{
@@ -158,7 +191,7 @@ function apiAddToServerList(req, res) {
 	return res.send("OK");
 }
 
-// API: Remove a server from the list.
+// apiRemoveFromServerList: Removes a server from the list.
 function apiRemoveFromServerList(req, res) {
 	if(typeof req.body.serverKey === "undefined" || apiCheckKey(req.body.serverKey))
 	{
@@ -196,7 +229,7 @@ function apiRemoveFromServerList(req, res) {
 	}
 }
 
-// API: Update a server in the list.
+// apiUpdateServerInList: Updates a server in the list.
 function apiUpdateServerInList(req, res) {
 	// Are we using access control? If so, are they allowed to do this?
 	if(useAccessControl === true && !allowedServerAddresses.includes(req.ip)) {
@@ -233,18 +266,14 @@ function apiUpdateServerInList(req, res) {
 	// TODO: Improve this. This feels ugly hack tier and I feel it could be more elegant.
 	// If anyone has a PR to improves this, please send me a PR.
 	var serverInQuestion = knownServers.filter((server) => (server.uuid === req.body.serverUuid));
-	var notTheServerInQuestion = knownServers.filter(server => (server.uuid !== req.body.serverUuid));
-
-	// Debugging
-	// console.log(serverInQuestion)
-	// console.log(notTheServerInQuestion)
+	var notTheServerInQuestion = knownServers.filter((server) => (server.uuid !== req.body.serverUuid));
 
 	// I hate it when we get arrays back from that filter function...
 	// Pretty sure this could be improved. PR welcome.
 	var updatedServer = [];
 	updatedServer["uuid"] = serverInQuestion[0].uuid;
-	updatedServer["port"] = serverInQuestion[0].port;
 	updatedServer["ip"] = serverInQuestion[0].ip;
+	updatedServer["port"] = serverInQuestion[0].port;
 
 	if(typeof req.body.newServerName !== "undefined") {
 		updatedServer["name"] = req.body.newServerName.trim();
@@ -262,43 +291,11 @@ function apiUpdateServerInList(req, res) {
 		updatedServer["players"] = serverInQuestion[0].players;
 	}
 
-	// Debugging
-	// console.log(updatedServer)
-
 	// Push the server back onto the stack.
 	notTheServerInQuestion.push(updatedServer);
 	knownServers = notTheServerInQuestion;
 
 	return res.send("OK");
-}
-
-// Checks if the server exists in our cache, by UUID.
-function apiDoesServerExist(uuid) {
-	var doesExist = knownServers.filter((server) => server.uuid == uuid);
-	if(doesExist.length > 0) return true;
-	
-	// Fall though.
-	return false;
-}
-
-// Checks if the server exists in our cache, by IP address and port.
-function apiDoesThisServerExistByAddressPort(ipAddress, port) {
-	var doesExist = knownServers.filter((servers) => (servers.ip === ipAddress && servers.port === port));
-	if(doesExist.length > 0) {
-		return true;
-	}
-
-	// Fall though.
-	return false;
-}
-
-// Checks to see if the client specified key matches.
-function apiCheckKey(clientKey) {
-	if(clientKey === secureLSKey) {
-		return true;
-	} else  {
-		return false;
-	}
 }
 
 // -- Start the application -- //
