@@ -95,7 +95,7 @@ function denyRequest (req, res) {
 
 // apiGetServerList: This handler returns a JSON array of servers to the clients.
 function apiGetServerList(req, res) {	
-	if(typeof req.body.serverKey === "undefined" || apiCheckKey(req.body.serverKey))
+	if(typeof req.body.serverKey === "undefined" || !apiCheckKey(req.body.serverKey))
 	{
 		console.warn(`${req.ip} tried to send request with wrong key: ${req.body.serverKey}`);
 		return res.sendStatus(400);
@@ -131,7 +131,7 @@ function apiGetServerList(req, res) {
 
 // apiAddToServerList: Adds a server to the list.
 function apiAddToServerList(req, res) {
-	if(typeof req.body.serverKey === "undefined" || apiCheckKey(req.body.serverKey))
+	if(typeof req.body.serverKey === "undefined" || !apiCheckKey(req.body.serverKey))
 	{
 		console.warn(`${req.ip} tried to send request with wrong key: ${req.body.serverKey}`);
 		return res.sendStatus(400);
@@ -192,7 +192,7 @@ function apiAddToServerList(req, res) {
 
 // apiRemoveFromServerList: Removes a server from the list.
 function apiRemoveFromServerList(req, res) {
-	if(typeof req.body.serverKey === "undefined" || apiCheckKey(req.body.serverKey))
+	if(typeof req.body.serverKey === "undefined" || !apiCheckKey(req.body.serverKey))
 	{
 		console.warn(`${req.ip} tried to send request with wrong key: ${req.body.serverKey}`);
 		return res.sendStatus(400);
@@ -237,7 +237,7 @@ function apiUpdateServerInList(req, res) {
 		return res.sendStatus(403);
 	}
 	
-	if(typeof req.body.serverKey === "undefined" || apiCheckKey(req.body.serverKey))
+	if(typeof req.body.serverKey === "undefined" || !apiCheckKey(req.body.serverKey))
 	{
 		console.warn(`${req.ip} tried to send request with wrong key: ${req.body.serverKey}`);
 		return res.sendStatus(400);
