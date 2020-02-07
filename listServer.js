@@ -98,8 +98,7 @@ function denyRequest (req, res) {
 }
 
 // apiGetServerList: This handler returns a JSON array of servers to the clients.
-function apiGetServerList(req, res) {	
-	console.log(`[WARN] Keys : ${req.body.serverKey} - ${secureLSKey}`);
+function apiGetServerList(req, res) {
 	if(typeof req.body.serverKey === "undefined" || !apiCheckKey(req.body.serverKey))
 	{
 			
