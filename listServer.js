@@ -123,7 +123,7 @@ function apiGetServerList(req, res) {
 	// A client wants the server list. Compile it and send out via JSON.
 	var serverList = [];	
 	// Clean out the old ones.
-	knownServers = knownServers.filter((freshServer) => (freshServer.lastUpdated >= rightNow.now()));
+	knownServers = knownServers.filter((freshServer) => (freshServer.lastUpdated >= Date.now()));
 	
 	knownServers.forEach((knownServer) => {
 		serverList.push({ 
