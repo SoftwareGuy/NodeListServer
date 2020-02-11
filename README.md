@@ -76,15 +76,15 @@ NodeListServer does not have the following features:
 *Note: It's recommended to use a process manager like **PM2** which will allow you start and stop the server elegantly, and restart it in case of crashes, etc.*
 
 **First Run:**
-1\. Install the Node modules by issuing `npm install`. This will read the requirements from packages.json.
+Install the Node modules by issuing `npm install`. This will read the requirements from packages.json.
 
 **To start the server:**
-1\. Invoke NodeJS with `listServer.js`. This is dependent on your operating system, but if Node is installed in your path, you can simply do `node listServer.js`. Ensure you use the Node 12.x binary.
-2\. Observe the logs. If the list server does not say anything then something went wrong. Check to see if the port is open that you want NodeListServer to listen on. **You cannot have more than one list server listening on the same port number.**
-3\. Try poking the server via `http://[your server ip]:8889` or whatever port you configured it as. If you're running it locally you can do `http://127.0.0.1:8889` with the shipped configuration.
-4\. If you get a `400 Bad Request` from the address in step 3, that is normal - the server is functional. Nice job!
+1.  Invoke NodeJS with `listServer.js`. This is dependent on your operating system, but if Node is installed in your path, you can simply do `node listServer.js`. Ensure you use the Node 12.x binary.
+2.  Observe the logs. If the list server does not say anything then something went wrong. Check to see if the port is open that you want NodeListServer to listen on. **You cannot have more than one list server listening on the same port number.**
+3.  Try poking the server via `http://[your server ip]:8889` or whatever port you configured it as. If you're running it locally you can do `http://127.0.0.1:8889` with the shipped configuration.
+4.  If you get a `400 Bad Request` from the address in step 3, that is normal - the server is functional. Nice job!
 
-*Example of a successful startup of NodeListServer (v1.0, v1.1+ greets you differently):*
+*Example of a successful startup of NodeListServer:*
 ```
 Hello there, I'm NodeListServer aka Mirror List Server, NodeJS version by SoftwareGuy (Coburn)
 Report bugs and fork me on GitHub: https://github.com/SoftwareGuy/NodeListServer
@@ -92,7 +92,8 @@ Up and listening on HTTP port 8889!
 ```
 
 **To stop the server:**
-1\. Simply CTRL+C the running Node Process, or you can use `kill`/`pkill` to kill the node instance. I'd recommend using `ps aux` and `kill <pid>` carefully, because `pkill node` would try to kill all node instances on your box - no bueno.
+
+Simply CTRL+C the running Node Process, or you can use `kill`/`pkill` to kill the node instance. I'd recommend using `ps aux` and `kill <pid>` carefully, because `pkill node` would try to kill all node instances on your box - no bueno.
 
 ### Updating NodeListServer
 
@@ -101,10 +102,11 @@ Up and listening on HTTP port 8889!
     -   Note that if you obtained the source via a ZIP archive, then you're not going to be able to just execute `git pull`. Download and extract a new ZIP archive of this repository instead.
 3.  New commits will update your installation of NodeListServer after running `git pull`.
     -   Rectify any pull merge errors if you have any (and you should know how to do this).
-	
 4.  Start NodeListServer again.
 
 ## The API Explained
+-   Note: These examples uses CURL on a Shell/Command Line. Adapt it to your environment respectively. 
+-   I strongly recommend using a UUID that is randomly generated (either via `uuid` on Linux, `System.Guid` in .NET, or whatnot) to avoid collisions. NodeListServer **will not** accept duplicate servers with the same UUID.
 
 ### API Endpoints
 
@@ -114,50 +116,42 @@ Up and listening on HTTP port 8889!
 
 #### Endpoint `/list`
 
--   **Method:** GET
--   This is the endpoint you use to get a server list. Note that we return a server list that doesn't have all the cache fields like the Server UUID. The reason behind that is if we did, someone could take the UUID and pass it to the `remove` Endpoint. And we don't want that, do we?
-
-#### Endpoint `/add`
-
 -   **Method:** POST
--   **Required POST elements:** serverUuid (Server UUID), serverName (Server Name), serverPort (Server Listening Port)
--   This is the endpoint that you use to add servers to the NodeListServer Cache.
+-   **Required POST elements:** serverKey
+-   This is the endpoint you use to get a server list. Simply POST the server key to the server to get the list. Note that the returned server list doesn't contain all cached data like the UUID and Last Updated values. The public doesn't need to know about that.
 
-#### Endpoint `/remove`
-
--   **Method:** POST
--   **Required POST elements:** serverUuid (Server UUID)
--   This is the endpoint you use to remove a server from the NodeListServer Cache. You need to supply the server UUID for it to be removed.
-
-#### Endpoint `/update`
-
--   **Method:** POST
--   **Required POST elements:** serverUuid (Server's UUID)
--   **Optional POST elements:** newServerName (New server name), newPlayerCount (New player count)
-
-This endpoint is special as it allows you to rename and change the player count of your server. So, if someone connected, you can increase the player count to the new count. Omit `newServerName` if you do not wish to change the server's registered name.
-*In the future this endpoint will be able to be used for a "keep alive" mechanism so that dead servers can get cleaned upon next list server request.*
-
-### API Communication Examples
-
-*Note: These examples uses CURL on a Shell/Command Line. Adapt it to your environment respectively. I strongly recommend using a UUID that is randomly generated (either via `uuid` on Linux, `System.Guid` in .NET, or whatnot) to avoid collisions. NodeListServer **will not** accept duplicate servers with the same UUID.*
-
-#### Getting a list of servers
 ```
 curl -X POST --data="serverKey=YourServerKeyGoesHere" http://127.0.0.1:8889/list
 ```
 *Note: `YourServerKeyGoesHere` is the string defined as the server key. The default is `NodeListServerDefaultKey`.*
 
-#### Adding a server to the list
+#### Endpoint `/add`
+-   **Method:** POST
+-   **Required POST elements:** serverKey, serverUuid (Server UUID), serverName (Server Name), serverPort (Server Listening Port)
+-   This is the endpoint that you use to add servers to the NodeListServer Cache.
+
 ```
-curl -X POST --data "serverKey=YourServerKeyGoesHere&serverUuid=1234-5678-9012-3456&serverName=Debug Playground&serverPort=7777" http://127.0.0.1:8889/add
+curl -X POST --data "serverKey=YourServerKeyGoesHere&serverUuid=1234-5678-9012-3456&serverName=Debug Playground&serverPort=7777&players=8" http://127.0.0.1:8889/add
 ```
-#### Removing a server from the list
+
+#### Endpoint `/remove`
+
+-   **Method:** POST
+-   **Required POST elements:** serverKey, serverUuid (Server UUID)
+-   This is the endpoint you use to remove a server from the NodeListServer Cache. You need to supply the server UUID for it to be removed.
+
 ```
 curl -X POST --data "serverKey=YourServerKeyGoesHere&serverUuid=1234-5678-9012-3456" http://127.0.0.1:8889/remove
 ```
 
-#### Updating a server in the list
+#### Endpoint `/update`
+
+-   **Method:** POST
+-   **Required POST elements:** serverKey, serverUuid (Server UUID)
+-   **Optional POST elements:** newServerName (new server name), newPlayerCount (New player count)
+-   This endpoint is special as it allows you to rename and change the player count of your server. So, if someone connected, you can increase the player count to the new count. Omit `newServerName` if you do not wish to change the server's registered name.
+-   This endpoint is also used to update your server entry's lastUpdated value. Use it to tell the List Server that your server is still alive.
+
 ```
 curl -X POST --data "serverKey=YourServerKeyGoesHere&serverUuid=1234-5678-9012-3456&newServerName=Waifu Dungeon&newPlayerCount=8" http://127.0.0.1:8889/update
 ```
@@ -170,7 +164,8 @@ Important: Do **NOT** auto-assume that POST functions will be successful. **Alwa
 
 -   You will get HTTP code 200 with a "OK" response from NodeListServer on success. 
 -   Anything not HTTP code 200 will be NodeListServer denying your request (you'll most likely get HTTP Code 400, Bad Request or if your IP is blocked, 403 Forbidden).
--   Make sure you cache the Server UUID you use. You'll need to use that to tell the List Server what to do with your server entry. Without a valid Server UUID, it will refuse to do anything. I strongly recommend using GUIDs, which are unique and if you're using Mono or .NET, you can just use `System.Guid.newGuid()` to generate a random one.
+-   Make sure you cache the Server UUID you use. You'll need to use that to tell the List Server what to do with your server entry. Without a valid Server UUID, it will refuse to do anything.
+-   I strongly recommend using GUIDs, which are unique and if you're using Mono or .NET, you can just use `System.Guid.newGuid()` to generate a random one.
 
 As a bonus, here's some generic serializable classes that you can use to translate the JSON into something more usable:
 
