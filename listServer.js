@@ -32,7 +32,9 @@ const allowedServerAddresses = [ "::ffff:127.0.0.1" ];
 // Secure list server Key, offers an increase of protection, send through unity
 // change default example, can be any string combination. (In Unity: form.AddField("serverKey", "666"); )
 const secureLSKey = "NodeListServerDefaultKey";
-
+// Configure the rate limiter. The window value is in milliseconds: 1000ms = 1 second. Keep that in mind!
+const rateLimitWindow = 15 * (60 * 1000); // Default: 15 minutes
+const maxRequestsPerWindow = 100;		  // Default: limit each IP to 100 requests per windowMs
 // ---------------
 // STOP! Do not edit below this line unless you know what you're doing,
 // or you are experienced with NodeJS (Javascript) programming. You 
@@ -41,11 +43,18 @@ const secureLSKey = "NodeListServerDefaultKey";
 // ---------------
 // Constant references to various modules.
 const expressServer = require("express");
+const expressRateLimiter = require("express-rate-limit");
 const expressApp = expressServer();
 const bodyParser = require("body-parser");
 
-// Let Express use Body Parser. Leave this alone.
-// We'll mainly use the JSON version.
+// Setup the rate limiter...
+const limiter = expressRateLimiter({
+  windowMs: rateLimitWindow, 	
+  max: maxRequestsPerWindow
+});
+expressApp.use(limiter);
+
+// We'll mainly use the JSON version of the bodyParser library.
 expressApp.use(bodyParser.json());
 expressApp.use(bodyParser.urlencoded({ extended: true }));
 
