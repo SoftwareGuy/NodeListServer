@@ -65,6 +65,7 @@ expressApp.use(bodyParser.urlencoded({ extended: true }));
 
 // Server memory array cache.
 var knownServers = [];
+const rightNow = new Date();
 
 // --- Functions --- //
 // - Authentication
@@ -111,7 +112,6 @@ function denyRequest (req, res) {
 function apiGetServerList(req, res) {
 	if(typeof req.body.serverKey === "undefined" || !apiCheckKey(req.body.serverKey))
 	{
-			
 		console.warn(`${req.ip} tried to send request with wrong key: ${req.body.serverKey}`);
 		return res.sendStatus(400);
 	}
@@ -122,20 +122,9 @@ function apiGetServerList(req, res) {
 	}
 
 	// A client wants the server list. Compile it and send out via JSON.
-	var serverList = [];
-	
-	//wrote when below section did not use the new forEach
-	for (var i = 0, len = knownServers.length; i < len; i++)
-	{
-		console.log(`[INFO] '${knownServers[i].name}'
-	remove date: '${knownServers[i].lastUpdated}'
-	current date: '${new Date()}' `)
-		if( new Date() > knownServers[i].lastUpdated )
-		{
-			console.log(`[INFO] Deleted server '${knownServers[i].name}' from cache (requested by ${req.ip})`)
-			knownServers = knownServers.filter(server => server.uuid != knownServers[i].uuid)		
-		}
-	}
+	var serverList = [];	
+	// Clean out the old ones.
+	knownServers = knownServers.filter((freshServer) => (freshServer.lastUpdated >= rightNow.now()));
 	
 	knownServers.forEach((knownServer) => {
 		serverList.push({ 
@@ -152,7 +141,6 @@ function apiGetServerList(req, res) {
 		"servers": serverList,
 	};
 
-	// console.log(returnedServerList)
 	console.log(`[INFO] Sending server list to ${req.ip}.`);
 	return res.json(returnedServerList);
 }
@@ -202,11 +190,6 @@ function apiAddToServerList(req, res) {
 		return res.sendStatus(400);
 	}
 	
-	//works out future remove date, stores in server settings
-	var removeDate = new Date() ;
-	var getmins = removeDate.getMinutes();
-	removeDate.setMinutes(getmins+inactiveMinutes);
-	
 	// We'll get the IP address directly, don't worry about that
 	var newServer = { 
 		"uuid": req.body.serverUuid, 
@@ -214,7 +197,7 @@ function apiAddToServerList(req, res) {
 		"name": req.body.serverName, 
 		"port": req.body.serverPort, 
 		"players": req.body.serverPlayers,
-		"lastUpdated": removeDate
+		"lastUpdated": (rightNow.now() + (inactiveMinutes * 60 * 1000))
 	};
 
 	// Push, but don't shove it onto stack.
@@ -324,14 +307,7 @@ function apiUpdateServerInList(req, res) {
 		updatedServer["players"] = serverInQuestion[0].players;
 	}
 	
-	//works out future remove date, stores in server settings
-	var removeDate = new Date() ;
-	var getmins = removeDate.getMinutes();
-	removeDate.setMinutes(getmins+inactiveMinutes);
-	console.log(`Updating '${serverInQuestion[0].name}'
-	new date: '${removeDate}'
-	old date: '${serverInQuestion[0].lastUpdated}' `)
-	updatedServer["lastUpdated"] = removeDate;
+	updatedServer["lastUpdated"] = (rightNow.now() + (inactiveMinutes * 60 * 1000));
 
 	// Push the server back onto the stack.
 	notTheServerInQuestion.push(updatedServer);
