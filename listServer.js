@@ -52,6 +52,7 @@ const limiter = expressRateLimiter({
   windowMs: rateLimitWindow, 	
   max: maxRequestsPerWindow
 });
+
 expressApp.use(limiter);
 
 // We'll mainly use the JSON version of the bodyParser library.
