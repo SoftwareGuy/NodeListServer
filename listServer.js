@@ -65,7 +65,6 @@ expressApp.use(bodyParser.urlencoded({ extended: true }));
 
 // Server memory array cache.
 var knownServers = [];
-const rightNow = new Date();
 
 // --- Functions --- //
 // - Authentication
@@ -197,7 +196,7 @@ function apiAddToServerList(req, res) {
 		"name": req.body.serverName, 
 		"port": req.body.serverPort, 
 		"players": req.body.serverPlayers,
-		"lastUpdated": (rightNow.now() + (inactiveMinutes * 60 * 1000))
+		"lastUpdated": (Date.now() + (inactiveMinutes * 60 * 1000))
 	};
 
 	// Push, but don't shove it onto stack.
@@ -307,7 +306,7 @@ function apiUpdateServerInList(req, res) {
 		updatedServer["players"] = serverInQuestion[0].players;
 	}
 	
-	updatedServer["lastUpdated"] = (rightNow.now() + (inactiveMinutes * 60 * 1000));
+	updatedServer["lastUpdated"] = (Date.now() + (inactiveMinutes * 60 * 1000));
 
 	// Push the server back onto the stack.
 	notTheServerInQuestion.push(updatedServer);
