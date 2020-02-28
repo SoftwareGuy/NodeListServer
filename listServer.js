@@ -121,16 +121,19 @@ function apiGetServerList(req, res) {
 	}
 
 	// A client wants the server list. Compile it and send out via JSON.
-	var serverList = [];	
+	var serverList = [];
 	// Clean out the old ones.
 	knownServers = knownServers.filter((freshServer) => (freshServer.lastUpdated >= Date.now()));
+	knownServers = knownServers.filter((freshServer) => (req.body.uuid));
 	
 	knownServers.forEach((knownServer) => {
 		serverList.push({ 
 			"ip": knownServer.ip, 
 			"name": knownServer.name, 
 			"port": parseInt(knownServer.port, 10), 
-			"players": parseInt(knownServer.players, 10)
+			"players": parseInt(knownServer.players, 10),
+			"capacity": parseInt(knownServer.capacity, 10),
+			"extras": knownServer.extras
 		});
 	});
 
@@ -196,13 +199,15 @@ function apiAddToServerList(req, res) {
 		"name": req.body.serverName, 
 		"port": req.body.serverPort, 
 		"players": req.body.serverPlayers,
+		"capacity": req.body.serverCapacity,
+		"extras": req.body.serverExtras,
 		"lastUpdated": (Date.now() + (inactiveMinutes * 60 * 1000))
 	};
 
 	// Push, but don't shove it onto stack.
 	knownServers.push(newServer);
 	
-	console.log(`[INFO] Added server '${req.body.serverUuid}' to cache from ${req.ip}`);
+	console.log(`[INFO] Added server '${req.body.serverName}' '${req.body.serverUuid}' to cache from ${req.ip}`);
 	return res.send("OK");
 }
 
@@ -289,18 +294,25 @@ function apiUpdateServerInList(req, res) {
 	updatedServer["uuid"] = serverInQuestion[0].uuid;
 	updatedServer["ip"] = serverInQuestion[0].ip;
 	updatedServer["port"] = serverInQuestion[0].port;
+	updatedServer["capacity"] = serverInQuestion[0].capacity;
 
-	if(typeof req.body.newServerName !== "undefined") {
-		updatedServer["name"] = req.body.newServerName.trim();
+	if(typeof req.body.serverExtras !== "undefined") {
+		updatedServer["extras"] = req.body.serverExtras.trim();
+	} else {
+		updatedServer["extras"] = serverInQuestion[0].extras;
+	}
+
+	if(typeof req.body.serverName !== "undefined") {
+		updatedServer["name"] = req.body.serverName.trim();
 	} else {
 		updatedServer["name"] = serverInQuestion[0].name;
 	}
 
-	if(typeof req.body.newPlayerCount !== "undefined") {
-		if(isNaN(parseInt(req.body.newPlayerCount, 10))) {
+	if(typeof req.body.serverPlayers !== "undefined") {
+		if(isNaN(parseInt(req.body.serverPlayers, 10))) {
 			updatedServer["players"] = 0;
 		} else {
-			updatedServer["players"] = parseInt(req.body.newPlayerCount, 10);
+			updatedServer["players"] = parseInt(req.body.serverPlayers, 10);
 		}
 	} else {
 		updatedServer["players"] = serverInQuestion[0].players;
