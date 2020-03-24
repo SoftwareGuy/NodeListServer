@@ -171,7 +171,12 @@ function apiAddToServerList(req, res) {
 		console.warn(`Add server request: No server UUID, name and/or port specified from ${req.ip}`);
 		return res.sendStatus(400);
 	}
-		
+
+	if(isNaN(req.body.serverPort)) {
+		console.warn(`Add server request: Bad port specified from ${req.ip}`);
+		return res.sendStatus(400);
+	}
+	
 	// Add the server to the list.
 	
 	// Checkpoint 1: UUID Collision check
@@ -196,12 +201,29 @@ function apiAddToServerList(req, res) {
 		"uuid": req.body.serverUuid, 
 		"ip": req.ip, 
 		"name": req.body.serverName, 
-		"port": req.body.serverPort, 
-		"players": req.body.serverPlayers,
-		"capacity": req.body.serverCapacity,
-		"extras": req.body.serverExtras,
+		"port": parseInt(req.body.serverPort, 10),
 		"lastUpdated": (Date.now() + (inactiveMinutes * 60 * 1000))
 	};
+	
+	// Extra field santitization
+	if(typeof req.body.serverPlayers === undefined || isNaN(req.body.serverPlayers)) {
+		newServer["players"] = 0;
+	} else {
+		newServer["players"] = parseInt(req.body.serverPlayers, 10);
+	}
+	
+	if(typeof req.body.serverCapacity === undefined || isNaN(req.body.serverCapacity)) {
+		newServer["capacity"] = 0;
+	} else {
+		newServer["capacity"] = parseInt(req.body.serverCapacity, 10);
+	}
+	
+	if(typeof req.body.serverExtras !== undefined) {
+		newServer["extras"] = req.body.serverExtras;
+	} else {
+		newServer["extras"] = "";
+	}
+	
 
 	// Push, but don't shove it onto stack.
 	knownServers.push(newServer);
@@ -292,6 +314,7 @@ function apiUpdateServerInList(req, res) {
 	var updatedServer = [];
 	updatedServer["uuid"] = serverInQuestion[0].uuid;
 	updatedServer["ip"] = serverInQuestion[0].ip;
+	
 	updatedServer["port"] = serverInQuestion[0].port;
 	updatedServer["capacity"] = serverInQuestion[0].capacity;
 
@@ -336,8 +359,8 @@ expressApp.post("/remove", apiRemoveFromServerList);		// Remove a server from th
 expressApp.post("/update", apiUpdateServerInList);
 
 // Finally, start the application
-console.log("Hello there, I'm NodeListServer aka Mirror List Server, NodeJS version by SoftwareGuy (Coburn)");
+console.log("NodeListServer: Mirror List Server reimplemented in NodeJS");
 console.log("Report bugs and fork me on GitHub: https://github.com/SoftwareGuy/NodeListServer");
 
-expressApp.listen(listenPort, () => console.log(`Up and listening on HTTP port ${listenPort}!`));
+expressApp.listen(listenPort, () => console.log(`Listening on HTTP port ${listenPort}!`));
 
