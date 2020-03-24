@@ -124,7 +124,6 @@ function apiGetServerList(req, res) {
 	var serverList = [];
 	// Clean out the old ones.
 	knownServers = knownServers.filter((freshServer) => (freshServer.lastUpdated >= Date.now()));
-	knownServers = knownServers.filter((freshServer) => (req.body.uuid));
 	
 	knownServers.forEach((knownServer) => {
 		serverList.push({ 
