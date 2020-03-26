@@ -20,31 +20,46 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-// --------------
-// Editable things
-// --------------
-// The listening port for this List Server instance.
-const listenPort = 8889;
-const useAccessControl = false;
-// Allowed Server Addresses need to be in IPv6 format, for example IPv4 127.0.0.1 becomes this according
-// to the Express Web Server.
-const allowedServerAddresses = [ "::ffff:127.0.0.1" ];
-// Secure list server Key, offers an increase of protection, send through unity
-// change default example, can be any string combination. (In Unity: form.AddField("serverKey", "NodeListServerDefaultKey"); )
-const secureLSKey = "NodeListServerDefaultKey";
-// Remove server if it has not been updated in X minutes, since that servers' last updated time.
-// Set in Unity to send update at set intervals, updating player amount for exmaple, can update lastUpdated time.
-// 1 min is nice for testing
-const inactiveMinutes = 15;
-// Configure the rate limiter. The window value is in milliseconds: 1000ms = 1 second. Keep that in mind!
-const rateLimitWindow = 15 * (60 * 1000); // Default: 15 minutes
-const maxRequestsPerWindow = 100;		  // Default: limit each IP to 100 requests per windowMs
 // ---------------
 // STOP! Do not edit below this line unless you know what you're doing,
 // or you are experienced with NodeJS (Javascript) programming. You 
 // will most likely break something, and unless you know how to
 // fix it yourself, you may be up the creek without a paddle.
 // ---------------
+// Some essentials before we get everything sorted
+const log4js = require("log4js");
+const iniParser = require("multi-ini");
+const fs = require("fs");
+
+// Storage variable for our configuration file.
+var configuration;
+
+// Log4js configuration
+log4js.configure({
+  appenders: {
+  	'console': { type: 'stdout' },
+    default: { type: 'file', filename: 'NodeListServer.log' }
+  },
+  categories: {
+    default: { appenders: ['default', 'console'], level: 'debug' }
+  }
+});
+
+var loggerInstance = log4js.getLogger('NodeListServer');
+
+// Do we have a configuration file?
+if (fs.existsSync("config.ini")) {
+    configuration = iniParser.read("./config.ini");
+    // REMOVE ME
+    console.log(configuration);
+} else {
+	loggerInstance.error("NodeListServer failed to start due to a missing 'config.ini' file.");
+	loggerInstance.error("Please ensure one exists in the directory next to the script file.");
+	loggerInstance.error("If you see this message repeatedly, you might have found a bug worth reporting at https://github.com/SoftwareGuy/NodeListServer.");
+	loggerInstance.error("Exiting...");
+	process.exit(1);
+}
+
 // Constant references to various modules.
 const expressServer = require("express");
 const expressRateLimiter = require("express-rate-limit");
@@ -53,24 +68,39 @@ const bodyParser = require("body-parser");
 
 // Setup the rate limiter...
 const limiter = expressRateLimiter({
-  windowMs: rateLimitWindow, 	
-  max: maxRequestsPerWindow
+  windowMs: configuration.Security.rateLimiterWindowMs, 	
+  max: configuration.Security.rateLimiterMaxApiRequestsPerWindow
 });
 
 expressApp.use(limiter);
-
-// We'll mainly use the JSON version of the bodyParser library.
 expressApp.use(bodyParser.json());
 expressApp.use(bodyParser.urlencoded({ extended: true }));
 
 // Server memory array cache.
 var knownServers = [];
+// If access control is enabled, we need to parse the string.
+var allowedServerAddresses = [];
+if((configuration.Auth.useAccessControl === true)) {
+	allowedServerAddresses = configuration.Auth.allowedIpAddresses.split(",");
+}
+
+
 
 // --- Functions --- //
 // - Authentication
 // apiCheckKey: Checks to see if the client specified key matches.
 function apiCheckKey(clientKey) {
-	if(clientKey === secureLSKey) {
+	if(clientKey === configuration.Auth.communicationKey) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+function apiIsKeyFromRequestIsBad(req) {
+	if(typeof req.body.serverKey === "undefined" || !apiCheckKey(req.body.serverKey))
+	{
+		loggerInstance.warn(`${req.ip} used a wrong key: ${req.body.serverKey}`);
 		return true;
 	} else {
 		return false;
@@ -103,28 +133,29 @@ function apiDoesThisServerExistByAddressPort(ipAddress, port) {
 // -- Request Handling
 // denyRequest: Generic function that denies requests.
 function denyRequest (req, res) {
-	console.warn(`Denied request from ${req.ip}. Method: ${req.method}; Path: ${req.path}`);
+	loggerInstance.warn(`Request from ${req.ip} denied. Tried ${req.method} method on path: ${req.path}`);
 	return res.sendStatus(400);
 }
 
 // apiGetServerList: This handler returns a JSON array of servers to the clients.
 function apiGetServerList(req, res) {
-	if(typeof req.body.serverKey === "undefined" || !apiCheckKey(req.body.serverKey))
+	if(apiIsKeyFromRequestIsBad(req))
 	{
-		console.warn(`${req.ip} tried to send request with wrong key: ${req.body.serverKey}`);
 		return res.sendStatus(400);
 	}
 	else
 	{
 		// Shows if keys match for those getting list server details.
-		console.log(`[INFO] Client key from ${req.ip} is correct: '${req.body.serverKey}'`);
+		loggerInstance.info(`${req.ip} accepted; communication key matched: '${req.body.serverKey}'`);
 	}
 
 	// A client wants the server list. Compile it and send out via JSON.
 	var serverList = [];
+
 	// Clean out the old ones.
 	knownServers = knownServers.filter((freshServer) => (freshServer.lastUpdated >= Date.now()));
-	
+	// TODO: Hide ones that are from the same IP
+
 	knownServers.forEach((knownServer) => {
 		serverList.push({ 
 			"ip": knownServer.ip, 
@@ -142,38 +173,38 @@ function apiGetServerList(req, res) {
 		"servers": serverList,
 	};
 
-	console.log(`[INFO] Sending server list to ${req.ip}.`);
+	loggerInstance.info(`Replying to ${req.ip} with known server list.`);
 	return res.json(returnedServerList);
 }
 
 // apiAddToServerList: Adds a server to the list.
 function apiAddToServerList(req, res) {
-	if(typeof req.body.serverKey === "undefined" || !apiCheckKey(req.body.serverKey))
+	// Doorstopper.
+	if(apiIsKeyFromRequestIsBad(req))
 	{
-		console.warn(`${req.ip} tried to send request with wrong key: ${req.body.serverKey}`);
 		return res.sendStatus(400);
 	}
 
 	// Are we using access control? If so, are they allowed to do this?
-	if(useAccessControl === true && !allowedServerAddresses.includes(req.ip)) {
+	if((configuration.Auth.useAccessControl === true) && !allowedServerAddresses.includes(req.ip)) {
 		// Not allowed.
-		console.warn(`Add Server request blocked from ${req.ip}: Not in ACL.`);
+		loggerInstance.warn(`Request from ${req.ip} denied: Not in ACL.`);
 		return res.sendStatus(403);
 	}
-	
+
 	// Sanity Checks
 	if(typeof req.body === "undefined") {
-		console.warn("Add Server request had no proper data.");
+		loggerInstance.warn(`Request from ${req.ip} denied: There was no body attached to the request.`);
 		return res.sendStatus(400);
 	}
 	
 	if(typeof req.body.serverUuid === "undefined" || typeof req.body.serverName === "undefined" || typeof req.body.serverPort === "undefined") {
-		console.warn(`Add server request: No server UUID, name and/or port specified from ${req.ip}`);
+		loggerInstance.warn(`Request from ${req.ip} denied: UUID, name and/or port is bogus.`);
 		return res.sendStatus(400);
 	}
 
-	if(isNaN(req.body.serverPort)) {
-		console.warn(`Add server request: Bad port specified from ${req.ip}`);
+	if(isNaN(req.body.serverPort) || req.body.serverPort < 0 || req.body.serverPort > 65535) {
+		loggerInstance.warn(`Request from ${req.ip} denied: Port was out of bounds.`);
 		return res.sendStatus(400);
 	}
 	
@@ -184,7 +215,7 @@ function apiAddToServerList(req, res) {
 	// malicious abuse or instances where the same UUID gets added twice, etc.
 	if(apiDoesServerExist(req.body.serverUuid)) {
 		// Collision - abort!
-		console.warn(`Server UUID collision. Not adding a new entry for '${req.body.serverUuid}' from ${req.ip}`);
+		loggerInstance.warn(`Server UUID collision check failed for ${req.ip} with UUID '${req.body.serverUuid}'.`);
 		return res.sendStatus(400);
 	}
 	
@@ -192,7 +223,7 @@ function apiAddToServerList(req, res) {
 	// If there's already a server on this IP or Port then don't add the server to the cache. This will stop duplicates.
 	if(apiDoesThisServerExistByAddressPort(req.ip, req.body.serverPort)) {
 		// Collision - abort!
-		console.warn(`Server IP and Port Collision. Not adding a new entry for '${req.body.serverUuid}' from ${req.ip}`);
+		loggerInstance.warn(`Server IP and Port collision check failed for ${req.ip} with UUID '${req.body.serverUuid}'.`);
 		return res.sendStatus(400);
 	}
 	
@@ -202,104 +233,99 @@ function apiAddToServerList(req, res) {
 		"ip": req.ip, 
 		"name": req.body.serverName, 
 		"port": parseInt(req.body.serverPort, 10),
-		"lastUpdated": (Date.now() + (inactiveMinutes * 60 * 1000))
+		"lastUpdated": (Date.now() + (configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000))
 	};
 	
 	// Extra field santitization
-	if(typeof req.body.serverPlayers === undefined || isNaN(req.body.serverPlayers)) {
+	if(typeof req.body.serverPlayers === "undefined" || isNaN(req.body.serverPlayers)) {
 		newServer["players"] = 0;
 	} else {
 		newServer["players"] = parseInt(req.body.serverPlayers, 10);
 	}
 	
-	if(typeof req.body.serverCapacity === undefined || isNaN(req.body.serverCapacity)) {
+	if(typeof req.body.serverCapacity === "undefined" || isNaN(req.body.serverCapacity)) {
 		newServer["capacity"] = 0;
 	} else {
 		newServer["capacity"] = parseInt(req.body.serverCapacity, 10);
 	}
 	
-	if(typeof req.body.serverExtras !== undefined) {
+	if(typeof req.body.serverExtras !== "undefined") {
 		newServer["extras"] = req.body.serverExtras;
 	} else {
 		newServer["extras"] = "";
 	}
 	
-
-	// Push, but don't shove it onto stack.
 	knownServers.push(newServer);
 	
-	console.log(`[INFO] Added server '${req.body.serverName}' '${req.body.serverUuid}' to cache from ${req.ip}`);
-	return res.send("OK");
+	loggerInstance.info(`New server added: '${req.body.serverName}', UUID: '${req.body.serverUuid}' from ${req.ip}.`);
+	return res.send("OK\n");
 }
 
 // apiRemoveFromServerList: Removes a server from the list.
 function apiRemoveFromServerList(req, res) {
-	if(typeof req.body.serverKey === "undefined" || !apiCheckKey(req.body.serverKey))
+	// Doorstopper.
+	if(apiIsKeyFromRequestIsBad(req))
 	{
-		console.warn(`${req.ip} tried to send request with wrong key: ${req.body.serverKey}`);
 		return res.sendStatus(400);
 	}
 
 	// Are we using access control? If so, are they allowed to do this?
-	if(useAccessControl === true && !allowedServerAddresses.includes(req.ip)) {
+	if((configuration.Auth.useAccessControl === true) && !allowedServerAddresses.includes(req.ip)) {
 		// Not allowed.
-		console.warn(`Remove server request blocked from ${req.ip}. They are not known in our allowed IPs list.`);
+		loggerInstance.warn(`Remove server request blocked from ${req.ip}. They are not known in our allowed IPs list.`);
 		return res.sendStatus(403);
 	}
-	
-	// Lul, someone tried to send a empty request.
+
 	if(typeof req.body === "undefined") {
-		console.warn(`Denied request from ${req.ip}; no POST data was provided.`);
+		loggerInstance.warn(`Request from ${req.ip} denied: no POST data was provided.`);
 		return res.sendStatus(400);
 	}
 
 	// Server isn't specified?	
 	if(typeof req.body.serverUuid === "undefined") {
-		console.warn(`Denied request from ${req.ip}; Server UUID was not provided.`);
+		loggerInstance.warn(`Request from ${req.ip} denied: Server UUID was not provided.`);
 		return res.sendStatus(400);
 	}
 	
-	
 	if(!apiDoesServerExist(req.body.serverUuid, knownServers)) {
-		console.warn(`Cannot delete server '${req.body.serverUuid}' from cache (requested by ${req.ip}): No such server`);
+		loggerInstance.warn(`Request from ${req.ip} denied: Can't delete server with UUID '${req.body.serverUuid}' from cache.`);
 		return res.sendStatus(400);
 	} else {
 		knownServers = knownServers.filter((server) => server.uuid !== req.body.serverUuid);
-		console.log(`[INFO] Deleted server '${req.body.serverUuid}' from cache (requested by ${req.ip})`);
-		return res.send("OK");
+		loggerInstance.info(`Deleted server '${req.body.serverUuid}' from cache (requested by ${req.ip}).`);
+		return res.send("OK\n");
 	}
 }
 
 // apiUpdateServerInList: Updates a server in the list.
 function apiUpdateServerInList(req, res) {
-	// Are we using access control? If so, are they allowed to do this?
-	if(useAccessControl === true && !allowedServerAddresses.includes(req.ip)) {
-		// Not allowed.
-		console.warn(`Update server request blocked from ${req.ip}. They are not known in our allowed IPs list.`);
-		return res.sendStatus(403);
-	}
-	
-	if(typeof req.body.serverKey === "undefined" || !apiCheckKey(req.body.serverKey))
+	// Doorstopper.
+	if(apiIsKeyFromRequestIsBad(req))
 	{
-		console.warn(`${req.ip} tried to send request with wrong key: ${req.body.serverKey}`);
 		return res.sendStatus(400);
 	}
-	
-	// Lul, someone tried to send a empty request.
+
+	// Are we using access control? If so, are they allowed to do this?
+	if((configuration.Auth.useAccessControl === true) && !allowedServerAddresses.includes(req.ip)) {
+		// Not allowed.
+		loggerInstance.warn(`Update server request blocked from ${req.ip}. They are not known in our allowed IPs list.`);
+		return res.sendStatus(403);
+	}
+
 	if(typeof req.body === "undefined") {
-		console.warn(`Denied request from ${req.ip}; no POST data was provided.`);
+		loggerInstance.warn(`Request from ${req.ip} denied: There was no body attached to the request.`);
 		return res.sendStatus(400);
 	}
 	
 	// Server isn't specified?	
 	if(typeof req.body.serverUuid === "undefined") {
-		console.warn(`Denied request from ${req.ip}; Server UUID was not provided.`);
+		loggerInstance.warn(`Request from ${req.ip} denied: UUID was not provided.`);
 		return res.sendStatus(400);
 	}
 
 	// Does the server even exist?
 	if(!apiDoesServerExist(req.body.serverUuid)) {
-		console.warn(`Cannot update server '${req.body.serverUuid}' (requested by ${req.ip}): No such server`);
+		loggerInstance.warn(`Request from ${req.ip} denied: No such server with UUID '${req.body.serverUuid}'`);
 		return res.sendStatus(400);
 	}
 	
@@ -340,13 +366,19 @@ function apiUpdateServerInList(req, res) {
 		updatedServer["players"] = serverInQuestion[0].players;
 	}
 	
-	updatedServer["lastUpdated"] = (Date.now() + (inactiveMinutes * 60 * 1000));
+	// Server capacity might have changed, let's update that if needed
+	if(typeof req.body.serverCapacity !== "undefined" || !isNaN(req.body.serverCapacity)) {		
+		updatedServer["capacity"] = parseInt(req.body.serverCapacity, 10);
+	}
+
+	updatedServer["lastUpdated"] = (Date.now() + (configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000));
 
 	// Push the server back onto the stack.
 	notTheServerInQuestion.push(updatedServer);
 	knownServers = notTheServerInQuestion;
 
-	return res.send("OK");
+	loggerInstance.info(`Server information updated for UUID '${updatedServer.uuid}'`);
+	return res.send("OK\n");
 }
 
 // -- Start the application -- //
@@ -362,5 +394,4 @@ expressApp.post("/update", apiUpdateServerInList);
 console.log("NodeListServer: Mirror List Server reimplemented in NodeJS");
 console.log("Report bugs and fork me on GitHub: https://github.com/SoftwareGuy/NodeListServer");
 
-expressApp.listen(listenPort, () => console.log(`Listening on HTTP port ${listenPort}!`));
-
+expressApp.listen(configuration.Core.listenPort, () => console.log(`Listening on HTTP port ${configuration.Core.listenPort}!`));
