@@ -50,8 +50,8 @@ var loggerInstance = log4js.getLogger('NodeListServer');
 // Do we have a configuration file?
 if (fs.existsSync("config.ini")) {
     configuration = iniParser.read("./config.ini");
-    // REMOVE ME
-    console.log(configuration);
+    // Use only for checking if configuration is valid, and not in production.
+    // console.log(configuration);
 } else {
 	loggerInstance.error("NodeListServer failed to start due to a missing 'config.ini' file.");
 	loggerInstance.error("Please ensure one exists in the directory next to the script file.");
@@ -391,7 +391,7 @@ expressApp.post("/remove", apiRemoveFromServerList);		// Remove a server from th
 expressApp.post("/update", apiUpdateServerInList);
 
 // Finally, start the application
-console.log("NodeListServer: Mirror List Server reimplemented in NodeJS");
+console.log("NodeListServer Gen2: Mirror List Server reimplemented in NodeJS");
 console.log("Report bugs and fork me on GitHub: https://github.com/SoftwareGuy/NodeListServer");
 
 expressApp.listen(configuration.Core.listenPort, () => console.log(`Listening on HTTP port ${configuration.Core.listenPort}!`));
