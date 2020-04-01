@@ -60,6 +60,17 @@ if (fs.existsSync("config.ini")) {
 	process.exit(1);
 }
 
+// This function was coded on a whim and probably is jank. Improvements welcome,
+// especially how to cast a string into a boolean. ie. "true" -> true.
+// In C# I would do bool.TryParse or some other cast.
+function translateConfigOptionToBool(value) {
+	if(value === "true" || value === 1) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
 // Constant references to various modules.
 const expressServer = require("express");
 const expressRateLimiter = require("express-rate-limit");
@@ -78,15 +89,12 @@ expressApp.use(bodyParser.urlencoded({ extended: true }));
 
 // Server memory array cache.
 var knownServers = [];
-// If access control is enabled, we need to parse the string.
+
 var allowedServerAddresses = [];
-if((configuration.Auth.useAccessControl === true)) {
+if(translateConfigOptionToBool(configuration.Auth.useAccessControl)) {
 	allowedServerAddresses = configuration.Auth.allowedIpAddresses.split(",");
 }
 
-
-
-// --- Functions --- //
 // - Authentication
 // apiCheckKey: Checks to see if the client specified key matches.
 function apiCheckKey(clientKey) {
@@ -154,9 +162,17 @@ function apiGetServerList(req, res) {
 
 	// Clean out the old ones.
 	knownServers = knownServers.filter((freshServer) => (freshServer.lastUpdated >= Date.now()));
-	// TODO: Hide ones that are from the same IP
 
+	// Run a loop though the list.
 	knownServers.forEach((knownServer) => {
+		// If we're hiding servers from the same IP, filter them out.
+		if(translateConfigOptionToBool(configuration.Pruning.dontShowServersOnSameIp)) {
+			if(knownServer.ip === req.ip) {
+				loggerInstance.info(`Skipped server '${knownServer.uuid}', reason: looks like it's hosted on the same IP as this client`);
+				return;
+			}
+		}
+
 		serverList.push({ 
 			"ip": knownServer.ip, 
 			"name": knownServer.name, 
@@ -186,7 +202,7 @@ function apiAddToServerList(req, res) {
 	}
 
 	// Are we using access control? If so, are they allowed to do this?
-	if((configuration.Auth.useAccessControl === true) && !allowedServerAddresses.includes(req.ip)) {
+	if(translateConfigOptionToBool(configuration.Auth.useAccessControl) && !allowedServerAddresses.includes(req.ip)) {
 		// Not allowed.
 		loggerInstance.warn(`Request from ${req.ip} denied: Not in ACL.`);
 		return res.sendStatus(403);
@@ -270,7 +286,7 @@ function apiRemoveFromServerList(req, res) {
 	}
 
 	// Are we using access control? If so, are they allowed to do this?
-	if((configuration.Auth.useAccessControl === true) && !allowedServerAddresses.includes(req.ip)) {
+	if(translateConfigOptionToBool(configuration.Auth.useAccessControl) && !allowedServerAddresses.includes(req.ip)) {
 		// Not allowed.
 		loggerInstance.warn(`Remove server request blocked from ${req.ip}. They are not known in our allowed IPs list.`);
 		return res.sendStatus(403);
@@ -306,7 +322,7 @@ function apiUpdateServerInList(req, res) {
 	}
 
 	// Are we using access control? If so, are they allowed to do this?
-	if((configuration.Auth.useAccessControl === true) && !allowedServerAddresses.includes(req.ip)) {
+	if(translateConfigOptionToBool(configuration.Auth.useAccessControl) && !allowedServerAddresses.includes(req.ip)) {
 		// Not allowed.
 		loggerInstance.warn(`Update server request blocked from ${req.ip}. They are not known in our allowed IPs list.`);
 		return res.sendStatus(403);
