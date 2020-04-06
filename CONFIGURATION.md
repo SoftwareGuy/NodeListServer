@@ -30,6 +30,7 @@ This category allows you to fine-tune the pruning settings of the list server wh
 | ------------- |:-------------:| -----:| ---------------- |
 | Pruning | inactiveServerRemovalMinutes | 15 | Value in minutes. If a server doesn't update its listing within this time period, it will be cleaned up the next call by a client requesting the server list. |
 | Pruning | dontShowServersOnSameIp | false | If one has servers being hosted on the same IP as they're connecting from, it will not appear in the list. See note 1 for more info. |
+| Pruning | ingameUpdateFrequency | 60 | Value in seconds. Controls the amount of time in between in-game updates. If a game was hardcoded to do updates every 10 minutes, servers would disappear before being updated if the List Server instance was set to kill server listings below the hardcoded value. It also can be used to help tune bandwidth. |
 
 #### Security
 This category is used for the security of NodeListServer. At the moment, the application uses these values to tune the rate limiter system.

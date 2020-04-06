@@ -38,7 +38,7 @@ var configuration;
 log4js.configure({
   appenders: {
   	'console': { type: 'stdout' },
-    default: { type: 'file', filename: 'NodeListServer.log' }
+    default: { type: 'file', filename: 'NodeListServer.log', maxLogSize: 1048576, backups: 3, compress: true }
   },
   categories: {
     default: { appenders: ['default', 'console'], level: 'debug' }
@@ -187,6 +187,7 @@ function apiGetServerList(req, res) {
 	var returnedServerList = {
 		"count": serverList.length,
 		"servers": serverList,
+		"updateFrequency": configuration.Pruning.ingameUpdateFrequency
 	};
 
 	loggerInstance.info(`Replying to ${req.ip} with known server list.`);
@@ -273,7 +274,7 @@ function apiAddToServerList(req, res) {
 	
 	knownServers.push(newServer);
 	
-	loggerInstance.info(`New server added: '${req.body.serverName}', UUID: '${req.body.serverUuid}' from ${req.ip}.`);
+	loggerInstance.info(`New server added: '${req.body.serverName}' from ${req.ip}. UUID: '${req.body.serverUuid}'`);
 	return res.send("OK\n");
 }
 
@@ -393,7 +394,7 @@ function apiUpdateServerInList(req, res) {
 	notTheServerInQuestion.push(updatedServer);
 	knownServers = notTheServerInQuestion;
 
-	loggerInstance.info(`Server information updated for UUID '${updatedServer.uuid}'`);
+	loggerInstance.info(`Updated information for '${updatedServer.name}', requested by ${req.ip}`);
 	return res.send("OK\n");
 }
 
