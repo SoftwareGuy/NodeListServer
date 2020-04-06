@@ -75,7 +75,7 @@ _Protip: Check to see if the port is open that you want NodeListServer to listen
 2.  Observe the logs that are printed to the console, if the list server does not say anything then something went wrong. A successful startup is as follows:
 
 ```
-NodeListServer: Mirror List Server reimplemented in NodeJS
+NodeListServer Gen2: Mirror List Server reimplemented in NodeJS
 Report bugs and fork me on GitHub: https://github.com/SoftwareGuy/NodeListServer
 Listening on HTTP port 8889!
 ```
@@ -129,6 +129,8 @@ public class NodeListServerListResponse
     public int count;
     // The container for the known servers.
     public List<NodeListServerListEntry> servers;
+    // Ideally used for client-hosted games, tells you how often you should refresh your server information.
+    public int updateFrequency;
 }
 
 [Serializable]
