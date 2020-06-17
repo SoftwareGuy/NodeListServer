@@ -30,6 +30,10 @@ Do note that you should not feel offended if I reject an idea, by all means you 
 
 ## Setup
 
+### Docker Support
+
+If you want to have everything handled for you and you're running a linux server, see [the Docker support documentation](DOCKER-SUPPORT.md) file for more info. Please note that this will require some additional setup.
+
 ### Requirements
 
 1.  NodeJS 12.x LTS (**download and install it first before trying to run this code**)
@@ -40,10 +44,15 @@ Do note that you should not feel offended if I reject an idea, by all means you 
 
 ## Installation
 
-### Git Clone Method (recommended)
+### Git Clone Method
+1.	Run this in the console of your operating system where you want the code to be placed (for example, `C:\NodeListServer`).
+```
+git clone https://github.com/SoftwareGuy/NodeListServer .
+```
 
-1.  Clone this repository via the clone URL provided. On Windows and Mac you can use Git GUI or SourceTree. On Mac/Linux, just make sure you have git installed, then use the Terminal to get that freshly baked source code.
-2.  Follow the instructions outlined in the **Operating & Updating** header below.
+NOTE: It is possible to use a GUI such as Git GUI or SourceTree. Use whatever you're familiar with.
+
+2. Continue with configuration step below.
 
 ### ZIP Installation Method
 
@@ -65,7 +74,7 @@ Do note that you should not feel offended if I reject an idea, by all means you 
 ### Starting & Stopping
 
 **First Run:**
-Install the Node modules by issuing `npm install`. This will read the requirements from packages.json.
+Install the Node modules by issuing `npm install --only=production`. This will read the requirements from packages.json.
 
 **To start the server:**
 
