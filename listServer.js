@@ -1,9 +1,9 @@
 /* eslint no-console: ["error", { allow: ["log", "warn", "error"] }] */
-// NodeJS Implementation of Mirror Network List Server
-// Developed by Matt Coburn (SoftwareGuy/Coburn64)
+// NodeListServer: NodeJS List Server (Re-)implementation of Mirror List Server
+// Developed by Matt Coburn and project contributors.
 // --------------
 // This software is licensed under the MIT License
-// Copyright (c) 2019 Matt Coburn
+// Copyright (c) 2019 - 2020 Matt Coburn
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
@@ -21,24 +21,24 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 // ---------------
-// STOP! Do not edit below this line unless you know what you're doing,
-// or you are experienced with NodeJS (Javascript) programming. You 
-// will most likely break something, and unless you know how to
-// fix it yourself, you may be up the creek without a paddle.
+// Require some essential libraries and modules.
 // ---------------
-// Some essentials before we get everything sorted
 const log4js = require("log4js");
 const iniParser = require("multi-ini");
 const fs = require("fs");
 
-// Storage variable for our configuration file.
+// ---------------
+// Used to store our configuration file data.
+// ---------------
 var configuration;
 
-// Log4js configuration
+// ---------------
+// Logging configuration. Feel free to modify.
+// ---------------
 log4js.configure({
   appenders: {
   	'console': { type: 'stdout' },
-    default: { type: 'file', filename: 'NodeListServer.log', maxLogSize: 1048576, backups: 3, compress: true }
+    	default: { type: 'file', filename: 'NodeListServer.log', maxLogSize: 1048576, backups: 3, compress: true }
   },
   categories: {
     default: { appenders: ['default', 'console'], level: 'debug' }
@@ -105,6 +105,7 @@ function apiCheckKey(clientKey) {
 	}
 }
 
+// apiIsKeyFromRequestIsBad: The name is a mouthful, but checks if the key is bad.
 function apiIsKeyFromRequestIsBad(req) {
 	if(typeof req.body.serverKey === "undefined" || !apiCheckKey(req.body.serverKey))
 	{
@@ -192,6 +193,60 @@ function apiGetServerList(req, res) {
 
 	loggerInstance.info(`Replying to ${req.ip} with known server list.`);
 	return res.json(returnedServerList);
+}
+
+// apiUpdateServerInList: Updates a server in the list.
+function apiUpdateServerInList(req, res) {
+
+	// TODO: Improve this. This feels ugly hack tier and I feel it could be more elegant.
+	// If anyone has a PR to improves this, please send me a PR.
+	var serverInQuestion = knownServers.filter((server) => (server.uuid === req.body.serverUuid));
+	var notTheServerInQuestion = knownServers.filter((server) => (server.uuid !== req.body.serverUuid));
+
+	// I hate it when we get arrays back from that filter function...
+	// Pretty sure this could be improved. PR welcome.
+	var updatedServer = [];
+	updatedServer["uuid"] = serverInQuestion[0].uuid;
+	updatedServer["ip"] = serverInQuestion[0].ip;
+	
+	updatedServer["port"] = serverInQuestion[0].port;
+	updatedServer["capacity"] = serverInQuestion[0].capacity;
+
+	if(typeof req.body.serverExtras !== "undefined") {
+		updatedServer["extras"] = req.body.serverExtras.trim();
+	} else {
+		updatedServer["extras"] = serverInQuestion[0].extras;
+	}
+
+	if(typeof req.body.serverName !== "undefined") {
+		updatedServer["name"] = req.body.serverName.trim();
+	} else {
+		updatedServer["name"] = serverInQuestion[0].name;
+	}
+
+	if(typeof req.body.serverPlayers !== "undefined") {
+		if(isNaN(parseInt(req.body.serverPlayers, 10))) {
+			updatedServer["players"] = 0;
+		} else {
+			updatedServer["players"] = parseInt(req.body.serverPlayers, 10);
+		}
+	} else {
+		updatedServer["players"] = serverInQuestion[0].players;
+	}
+	
+	// Server capacity might have changed, let's update that if needed
+	if(typeof req.body.serverCapacity !== "undefined" || !isNaN(req.body.serverCapacity)) {		
+		updatedServer["capacity"] = parseInt(req.body.serverCapacity, 10);
+	}
+
+	updatedServer["lastUpdated"] = (Date.now() + (configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000));
+
+	// Push the server back onto the stack.
+	notTheServerInQuestion.push(updatedServer);
+	knownServers = notTheServerInQuestion;
+
+	loggerInstance.info(`Updated information for '${updatedServer.name}', requested by ${req.ip}`);
+	return res.send("OK\n");
 }
 
 // apiAddToServerList: Adds a server to the list.
@@ -316,70 +371,16 @@ function apiRemoveFromServerList(req, res) {
 	}
 }
 
-// apiUpdateServerInList: Updates a server in the list.
-function apiUpdateServerInList(req, res) {
-
-	// TODO: Improve this. This feels ugly hack tier and I feel it could be more elegant.
-	// If anyone has a PR to improves this, please send me a PR.
-	var serverInQuestion = knownServers.filter((server) => (server.uuid === req.body.serverUuid));
-	var notTheServerInQuestion = knownServers.filter((server) => (server.uuid !== req.body.serverUuid));
-
-	// I hate it when we get arrays back from that filter function...
-	// Pretty sure this could be improved. PR welcome.
-	var updatedServer = [];
-	updatedServer["uuid"] = serverInQuestion[0].uuid;
-	updatedServer["ip"] = serverInQuestion[0].ip;
-	
-	updatedServer["port"] = serverInQuestion[0].port;
-	updatedServer["capacity"] = serverInQuestion[0].capacity;
-
-	if(typeof req.body.serverExtras !== "undefined") {
-		updatedServer["extras"] = req.body.serverExtras.trim();
-	} else {
-		updatedServer["extras"] = serverInQuestion[0].extras;
-	}
-
-	if(typeof req.body.serverName !== "undefined") {
-		updatedServer["name"] = req.body.serverName.trim();
-	} else {
-		updatedServer["name"] = serverInQuestion[0].name;
-	}
-
-	if(typeof req.body.serverPlayers !== "undefined") {
-		if(isNaN(parseInt(req.body.serverPlayers, 10))) {
-			updatedServer["players"] = 0;
-		} else {
-			updatedServer["players"] = parseInt(req.body.serverPlayers, 10);
-		}
-	} else {
-		updatedServer["players"] = serverInQuestion[0].players;
-	}
-	
-	// Server capacity might have changed, let's update that if needed
-	if(typeof req.body.serverCapacity !== "undefined" || !isNaN(req.body.serverCapacity)) {		
-		updatedServer["capacity"] = parseInt(req.body.serverCapacity, 10);
-	}
-
-	updatedServer["lastUpdated"] = (Date.now() + (configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000));
-
-	// Push the server back onto the stack.
-	notTheServerInQuestion.push(updatedServer);
-	knownServers = notTheServerInQuestion;
-
-	loggerInstance.info(`Updated information for '${updatedServer.name}', requested by ${req.ip}`);
-	return res.send("OK\n");
-}
-
 // -- Start the application -- //
 // Coburn: Moved the actual startup routines here to help boost Codacy's opinion.
 // Callbacks to various functions, leave this alone unless you know what you're doing.
 expressApp.get("/", denyRequest);
-expressApp.post("/list", apiGetServerList);					// List of servers...
-expressApp.post("/add", apiAddToServerList);				// Add a server to the list...
-expressApp.post("/remove", apiRemoveFromServerList);		// Remove a server from the list...
+expressApp.post("/list", apiGetServerList);
+expressApp.post("/add", apiAddToServerList);
+expressApp.post("/remove", apiRemoveFromServerList);
 
 // Finally, start the application
-console.log("NodeListServer Gen2: Mirror List Server reimplemented in NodeJS");
-console.log("Report bugs and fork me on GitHub: https://github.com/SoftwareGuy/NodeListServer");
+console.log("Welcome to NodeListServer Generation 2 Revision 1");
+console.log("Report bugs and fork the project on GitHub: https://github.com/SoftwareGuy/NodeListServer");
 
-expressApp.listen(configuration.Core.listenPort, () => console.log(`Listening on HTTP port ${configuration.Core.listenPort}!`));
+expressApp.listen(configuration.Core.listenPort, () => console.log(`Server listening on port ${configuration.Core.listenPort}.`));
