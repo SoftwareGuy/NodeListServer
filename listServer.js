@@ -227,55 +227,57 @@ function apiAddToServerList(req, res) {
 	
 	// Add the server to the list.
 	
-	// Checkpoint 1: UUID Collision check
-	// If there's a UUID collision before we add the server then don't add the server to the cache, as this will help prevent
-	// malicious abuse or instances where the same UUID gets added twice, etc.
-	if(apiDoesServerExist(req.body.serverUuid)) {
-		// Collision - abort!
-		loggerInstance.warn(`Server UUID collision check failed for ${req.ip} with UUID '${req.body.serverUuid}'.`);
-		return res.sendStatus(400);
+	/// Checkpoint 1: UUID Collision check
+	// If there's a UUID collision before we add the server then update the matching server.
+	if(apiDoesServerExist(req.body.serverUuid))
+	{
+		// Collision - update!
+		loggerInstance.info(`Update server: '${req.body.serverName}' from ${req.ip}. UUID: '${req.body.serverUuid}'`);
+		apiUpdateServerInList(req, res);
 	}
-	
-	// Checkpoint 2: IP and Port collision check
-	// If there's already a server on this IP or Port then don't add the server to the cache. This will stop duplicates.
-	if(apiDoesThisServerExistByAddressPort(req.ip, req.body.serverPort)) {
-		// Collision - abort!
-		loggerInstance.warn(`Server IP and Port collision check failed for ${req.ip} with UUID '${req.body.serverUuid}'.`);
-		return res.sendStatus(400);
+	else
+	{
+		// Checkpoint 2: IP and Port collision check
+		// If there's already a server on this IP or Port then don't add the server to the cache. This will stop duplicates.
+		if(apiDoesThisServerExistByAddressPort(req.ip, req.body.serverPort)) {
+			// Collision - abort!
+			loggerInstance.warn(`Server IP and Port collision check failed for ${req.ip} with UUID '${req.body.serverUuid}'.`);
+			return res.sendStatus(400);
+		}
+
+		// We'll get the IP address directly, don't worry about that
+		var newServer = { 
+			"uuid": req.body.serverUuid, 
+			"ip": req.ip, 
+			"name": req.body.serverName, 
+			"port": parseInt(req.body.serverPort, 10),
+			"lastUpdated": (Date.now() + (configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000))
+		};
+
+		// Extra field santitization
+		if(typeof req.body.serverPlayers === "undefined" || isNaN(req.body.serverPlayers)) {
+			newServer["players"] = 0;
+		} else {
+			newServer["players"] = parseInt(req.body.serverPlayers, 10);
+		}
+
+		if(typeof req.body.serverCapacity === "undefined" || isNaN(req.body.serverCapacity)) {
+			newServer["capacity"] = 0;
+		} else {
+			newServer["capacity"] = parseInt(req.body.serverCapacity, 10);
+		}
+
+		if(typeof req.body.serverExtras !== "undefined") {
+			newServer["extras"] = req.body.serverExtras;
+		} else {
+			newServer["extras"] = "";
+		}
+
+		knownServers.push(newServer);
+
+		loggerInstance.info(`New server added: '${req.body.serverName}' from ${req.ip}. UUID: '${req.body.serverUuid}'`);
+		return res.send("OK\n");
 	}
-	
-	// We'll get the IP address directly, don't worry about that
-	var newServer = { 
-		"uuid": req.body.serverUuid, 
-		"ip": req.ip, 
-		"name": req.body.serverName, 
-		"port": parseInt(req.body.serverPort, 10),
-		"lastUpdated": (Date.now() + (configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000))
-	};
-	
-	// Extra field santitization
-	if(typeof req.body.serverPlayers === "undefined" || isNaN(req.body.serverPlayers)) {
-		newServer["players"] = 0;
-	} else {
-		newServer["players"] = parseInt(req.body.serverPlayers, 10);
-	}
-	
-	if(typeof req.body.serverCapacity === "undefined" || isNaN(req.body.serverCapacity)) {
-		newServer["capacity"] = 0;
-	} else {
-		newServer["capacity"] = parseInt(req.body.serverCapacity, 10);
-	}
-	
-	if(typeof req.body.serverExtras !== "undefined") {
-		newServer["extras"] = req.body.serverExtras;
-	} else {
-		newServer["extras"] = "";
-	}
-	
-	knownServers.push(newServer);
-	
-	loggerInstance.info(`New server added: '${req.body.serverName}' from ${req.ip}. UUID: '${req.body.serverUuid}'`);
-	return res.send("OK\n");
 }
 
 // apiRemoveFromServerList: Removes a server from the list.
@@ -316,37 +318,7 @@ function apiRemoveFromServerList(req, res) {
 
 // apiUpdateServerInList: Updates a server in the list.
 function apiUpdateServerInList(req, res) {
-	// Doorstopper.
-	if(apiIsKeyFromRequestIsBad(req))
-	{
-		return res.sendStatus(400);
-	}
 
-	// Are we using access control? If so, are they allowed to do this?
-	if(translateConfigOptionToBool(configuration.Auth.useAccessControl) && !allowedServerAddresses.includes(req.ip)) {
-		// Not allowed.
-		loggerInstance.warn(`Update server request blocked from ${req.ip}. They are not known in our allowed IPs list.`);
-		return res.sendStatus(403);
-	}
-
-	if(typeof req.body === "undefined") {
-		loggerInstance.warn(`Request from ${req.ip} denied: There was no body attached to the request.`);
-		return res.sendStatus(400);
-	}
-	
-	// Server isn't specified?	
-	if(typeof req.body.serverUuid === "undefined") {
-		loggerInstance.warn(`Request from ${req.ip} denied: UUID was not provided.`);
-		return res.sendStatus(400);
-	}
-
-	// Does the server even exist?
-	if(!apiDoesServerExist(req.body.serverUuid)) {
-		loggerInstance.warn(`Request from ${req.ip} denied: No such server with UUID '${req.body.serverUuid}'`);
-		return res.sendStatus(400);
-	}
-	
-	// Okay, all those checks passed, let's do this.
 	// TODO: Improve this. This feels ugly hack tier and I feel it could be more elegant.
 	// If anyone has a PR to improves this, please send me a PR.
 	var serverInQuestion = knownServers.filter((server) => (server.uuid === req.body.serverUuid));
@@ -405,7 +377,6 @@ expressApp.get("/", denyRequest);
 expressApp.post("/list", apiGetServerList);					// List of servers...
 expressApp.post("/add", apiAddToServerList);				// Add a server to the list...
 expressApp.post("/remove", apiRemoveFromServerList);		// Remove a server from the list...
-expressApp.post("/update", apiUpdateServerInList);
 
 // Finally, start the application
 console.log("NodeListServer Gen2: Mirror List Server reimplemented in NodeJS");
