@@ -1,32 +1,44 @@
 # NodeListServer Generation 2
 
+![MIT Licensed](https://img.shields.io/badge/license-MIT-green.svg)
 [![Ko-Fi](https://img.shields.io/badge/Donate-Ko--Fi-red)](https://ko-fi.com/coburn) 
 [![PayPal](https://img.shields.io/badge/Donate-PayPal-blue)](https://paypal.me/coburn64)
-![MIT Licensed](https://img.shields.io/badge/license-MIT-green.svg)
 
-This is a reimplementation of the Mirror List Server using NodeJS with 100% Fresh, Organic, Free-Range Australian Code. It runs on top of NodeJS 12.x LTS with Express as the light-weight web server. _**Please consider a donation (see the Ko-Fi button above) if this product is useful to you.**_
+NodeLS (Node List Server) is a game server directory application that aims to provide a reliable way of registering, deregistering and informing clients of servers available for your game(s).
+
+## Why NodeLS?
+
+When developing a game, let's say a First Person Shooter, you might want to have clients host their own servers. These servers might be 
+host-client ("listen") or pure dedicated instances. However, here comes the next problem...
+
+How the heck do you display servers that are available for you to join?
+
+Enter NodeLS. NodeLS started as a free alternative/reimplementation of the Mirror List Server using NodeJS. The source
+is licensed under MIT. That said, using NodeLS also brings you assurance that you control the data that is being sent and received, not a third party
+other than the server provider you deal with.
+
+_**Please consider a donation (see the Ko-Fi button above) if this server software is useful to you.**_
 
 ## Features
 
--   **OSS Core:** The official Mirror List Server is closed source. NodeListServer is open source, so you can freely tailor it to your needs.
--   **Fast:** Just like the official List Server, this one written in NodeJS is fast too.
--   **Secure:** NodeListServer supports ACLs to prevent anyone adding/removing servers from your instances. Clients must provide a key in order to communicate, and rate limiting helps keep traffic floods at bay.
+-   **OSS Core:** Feel free to tailor it to your needs, it's open source. Find a bug? Fix it, shoot me a PR, let me review and if it looks good, congrats!
+-	**Game Engine Agnostic:** Thanks to the HTTP API, any engine that can do HTTP requests can take advantage of NodeLS.
+-   **Fast:** Mirror's retired List Server was written in Erlang. We use NodeJS to power this baby.
+-   **Secure:** ACLs (Access Control Lists) can be used as well as key authenication to prevent anyone adding/removing servers from your instances. Servers must provide a key in order to register, and rate limiting clients helps keep traffic floods at bay.
 -	**Configurable:** Generation 2 of NodeLS now features a INI-styled configuration file. This makes configuration much easier.
--   **WebGL compatible:** NodeLS uses a simple HTTP API to add and remove servers. No complex magic required.
--	**Not just useful for games:** This is not just limited to games, you could use it for other non-Unity applications too!
+-   **WebGL compatible:** No complex magic required. NodeLS uses a simple HTTP API to add and remove servers. 
+
 
 ## Non-Features
 
--   **Matchmaking:** Too complicated for what this product does.
+-   **Matchmaking:** Outside the realm that this program sits in.
 -   Anything else that it doesn't offer.
 
 ## Bug Fixes, New Features, etc
 
 -   **If you find a bug:** Please report it via the Issues ticket system. If you know NodeJS-flavoured Javascript and ***think that you can fix it*** then I'd really appreciate a pull request!
 -   **Refactors, Improvements, Tweaks:** I'm all ears to improvements and refinements. Please open a issue and suggest your modifications or fork this project, improve it, then open a PR.
--   **Ooh, shiny feature:** New features are carefully considered. I try to follow the KISS prinicible, which helps not only keep code clean but doesn't bloat the end product. 
-
-Do note that you should not feel offended if I reject an idea, by all means you can make your own variant of NodeListServer with your own additions.
+-   **Ooh, shiny new features:** New features are carefully considered. I try to follow the KISS prinicible, which helps not only keep code clean but doesn't bloat the end product. 
 
 ## Setup
 
