@@ -1,9 +1,9 @@
 /* eslint no-console: ["error", { allow: ["log", "warn", "error"] }] */
-// NodeListServer: NodeJS List Server (Re-)implementation of Mirror List Server
+// NodeLS: Node List Server Generation 3
 // Developed by Matt Coburn and project contributors.
 // --------------
-// This software is licensed under the MIT License
-// Copyright (c) 2019 - 2020 Matt Coburn
+// This software is licensed under the MIT License.
+// Copyright (c) 2019 - 2021 Matt Coburn (SoftwareGuy)
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
@@ -382,7 +382,7 @@ expressApp.post("/add", apiAddToServerList);
 expressApp.post("/remove", apiRemoveFromServerList);
 
 // Finally, start the application
-console.log("Welcome to NodeListServer Generation 2 Revision 1");
-console.log("Report bugs and fork the project on GitHub: https://github.com/SoftwareGuy/NodeListServer");
+console.log("NodeLS: Node List Server Generation 3 (Development Version)");
+console.log("Report bugs, fork the project and support the developer on GitHub at https://github.com/SoftwareGuy/NodeListServer");
 
-expressApp.listen(configuration.Core.listenPort, () => console.log(`Server listening on port ${configuration.Core.listenPort}.`));
+expressApp.listen(configuration.Core.listenPort, () => console.log(`NodeLS started listening on ${configuration.Core.listenPort}.`));
