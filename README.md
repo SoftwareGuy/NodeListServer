@@ -1,4 +1,4 @@
-# NodeListServer Generation 2
+# NodeListServer Generation 3
 
 ![MIT Licensed](https://img.shields.io/badge/license-MIT-green.svg)
 [![Ko-Fi](https://img.shields.io/badge/Donate-Ko--Fi-red)](https://ko-fi.com/coburn) 
@@ -8,31 +8,33 @@ NodeLS (Node List Server) is a game server directory application that aims to pr
 
 ## Why NodeLS?
 
-When developing a game, let's say a First Person Shooter, you might want to have clients host their own servers. These servers might be 
-host-client ("listen") or pure dedicated instances. However, here comes the next problem...
+When developing a game, let's say a First Person Shooter, you might want to have clients host their own servers or you have a fleet of your own servers. T
+hese servers might be host-client ("listen") or pure dedicated instances. However, here comes the next problem...
 
 How the heck do you display servers that are available for you to join?
 
-Enter NodeLS. NodeLS started as a free alternative/reimplementation of the Mirror List Server using NodeJS. The source
-is licensed under MIT. That said, using NodeLS also brings you assurance that you control the data that is being sent and received, not a third party
-other than the server provider you deal with.
+Node List Server (NodeLS for short) is a server directory application that allows. Originally designed to provide an open source alternative to the
+now-sunset Mirror List Server paid service, NodeLS is is licensed under MIT, so you are welcome to fork, modify and contribute back to the original project.
 
-_**Please consider a donation (see the Ko-Fi button above) if this server software is useful to you.**_
+_**Please consider a donation (see the Ko-Fi button above) if this software is useful to you.**_
+
+## Is this just for games? Or can I use it for X?
+
+While NodeLS is indeed geared towards game servers, there is no problem in using it for another project be it a standard application, VR experience or something else.
 
 ## Features
 
 -   **OSS Core:** Feel free to tailor it to your needs, it's open source. Find a bug? Fix it, shoot me a PR, let me review and if it looks good, congrats!
--	**Game Engine Agnostic:** Thanks to the HTTP API, any engine that can do HTTP requests can take advantage of NodeLS.
+-	**Game Engine Agnostic:** Any application/game engine that can do HTTP GET requests can take advantage of NodeLS.
 -   **Fast:** Mirror's retired List Server was written in Erlang. We use NodeJS to power this baby.
 -   **Secure:** ACLs (Access Control Lists) can be used as well as key authenication to prevent anyone adding/removing servers from your instances. Servers must provide a key in order to register, and rate limiting clients helps keep traffic floods at bay.
 -	**Configurable:** Generation 2 of NodeLS now features a INI-styled configuration file. This makes configuration much easier.
 -   **WebGL compatible:** No complex magic required. NodeLS uses a simple HTTP API to add and remove servers. 
 
-
 ## Non-Features
 
--   **Matchmaking:** Outside the realm that this program sits in.
--   Anything else that it doesn't offer.
+-   **Matchmaking:** There is no matchmaking capabilities in NodeLS.
+-   Something else maybe not listed here
 
 ## Bug Fixes, New Features, etc
 
@@ -48,21 +50,22 @@ If you want to have everything handled for you and you're running a linux server
 
 ### Requirements
 
-1.  NodeJS 12.x LTS (**download and install it first before trying to run this code**)
+1.  NodeJS (LTS recommended. **Make sure it's installed and running first.**)
 2.  A server instance, be it Windows or Linux
 3.  Some knowledge about programming, fair amount of patience and Git-fu
 
-**Make sure your installation of NodeJS 12.x LTS is functional before continuing!**
+**Make sure your installation of NodeJS is functional before continuing!**
 
 ## Installation
 
-### Git Clone Method
+### Git Clone Method (GUI)
+1. Use your favourite GUI Git Client to clone the repository.
+
+### Git Clone Method (CLI)
 1.	Run this in the console of your operating system where you want the code to be placed (for example, `C:\NodeListServer`).
 ```
 git clone https://github.com/SoftwareGuy/NodeListServer .
 ```
-
-NOTE: It is possible to use a GUI such as Git GUI or SourceTree. Use whatever you're familiar with.
 
 2. Continue with configuration step below.
 
@@ -71,7 +74,7 @@ NOTE: It is possible to use a GUI such as Git GUI or SourceTree. Use whatever yo
 1.  Obtain a ZIP archive of this repository via the "Download as ZIP" option.
 2.  Extract it somewhere on your system.
 
-**Note: The ZIP Installation Method loses it's Git metadata, so you will not be able to have easy updates.**
+**Note:** The ZIP Installation Method loses it's Git metadata, so you will not be able to have easy updates.
 
 ## Configuration
 
@@ -181,6 +184,5 @@ Make sure you POST the correct data when you want to add/remove servers. See API
 -	JesusLuvsYooh: That other blacksmith that's forging NodeLS into shape and always annoying me with questions
 -	AnthonyE: First actual deployment of NodeLS in production!
 -   Mirror Team & Discord Members
-
 
 ***Thank you for choosing Australian Open Source Software.***
