@@ -105,7 +105,6 @@ if(configuration.Security.rateLimiter) {
 	loggerInstance.info("Rate limiting enabled. Configuring...");
 	const expressRateLimiter = require("express-rate-limit");
 	
-
 	const limiter = expressRateLimiter({
 	  windowMs: configuration.Security.rateLimiterWindow * 60 * 1000, 	
 	  max: configuration.Security.rateLimiterMaxRequests
@@ -134,7 +133,7 @@ function CheckAuthKey(clientKey) {
 function CheckAuthKeyFromRequestIsBad(req) {
 	if(typeof req.body.serverKey === "undefined" || !CheckAuthKey(req.body.serverKey))
 	{
-		loggerInstance.warn(`Failed key check from ${req.ip}: ${req.body.serverKey}`);
+		loggerInstance.warn(`Auth Key mismatch from ${req.ip}: ${req.body.serverKey}`);
 		return true;
 	} else {
 		return false;
@@ -238,7 +237,7 @@ function UpdateServerInList(req, res) {
 	knownServers = notTheServerInQuestion;
 
 	loggerInstance.info(`'${updatedServer.name}' was updated by ${req.ip}`);
-	return res.send("OK\n");
+	return res.sendStatus(200);
 }
 
 // AddToServerList: Adds a server to the list.
@@ -252,7 +251,7 @@ function AddToServerList(req, res) {
 	// Are we using access control? If so, are they allowed to do this?
 	if(configuration.Security.accessControlEnabled && !configuration.Security.allowedAddresses.includes(req.ip)) {
 		// Not allowed.
-		loggerInstance.warn(`Denied add request from ${req.ip}: Not in ACL.`);
+		loggerInstance.warn(`Access Control: Denied ${req.ip}. Not allowed.`);
 		return res.sendStatus(403);
 	}
 
@@ -338,7 +337,7 @@ function RemoveServerFromList(req, res) {
 	// Are we using access control? If so, are they allowed to do this?
 	if(configuration.Security.accessControlEnabled && !configuration.Security.allowedAddresses.includes(req.ip)) {
 		// Not allowed.
-		loggerInstance.warn(`Denied delete request from ${req.ip}: IP address not allowed.`);
+		loggerInstance.warn(`Access Control: Denied ${req.ip}. Not allowed.`);
 		return res.sendStatus(403);
 	}
 
@@ -363,8 +362,6 @@ function RemoveServerFromList(req, res) {
 	}
 }
 
-// -- Start the application -- //
-// Coburn: Moved the actual startup routines here to help boost Codacy's opinion.
 // Callbacks to various functions, leave this alone unless you know what you're doing.
 expressApp.get("/", GetServerList);
 expressApp.get("/list", GetServerList);
