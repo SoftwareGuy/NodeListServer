@@ -5,6 +5,7 @@
   },
   "Clients": {
 	  "updateFrequency": 300
+	  "dontShowSameIp": false
   },
   "Pruning": {
 	  "inactiveServerTimeout": 15
@@ -12,7 +13,7 @@
   "Security": {
     "accessControlEnabled": false,
     "allowedAddresses": [
-      "127.0.0.1"
+      "::ffff:127.0.0.1"
     ],
     "communicationKey": "ChangeMeDamnIt",	
 	"rateLimiter": true,

@@ -120,13 +120,6 @@ expressApp.use(bodyParser.urlencoded({ extended: true }));
 // Server memory array cache.
 var knownServers = [];
 
-var allowedServerAddresses = [];
-/*
-if(translateConfigOptionToBool(configuration.Auth.useAccessControl)) {
-	allowedServerAddresses = configuration.Auth.allowedIpAddresses.split(",");
-}
-*/
-
 // - Authentication
 // CheckAuthKey: Checks to see if the client specified key matches.
 function CheckAuthKey(clientKey) {
@@ -137,7 +130,7 @@ function CheckAuthKey(clientKey) {
 	}
 }
 
-// apiIsKeyFromRequestIsBad: The name is a mouthful, but checks if the key is bad.
+// CheckAuthKeyFromRequestIsBad: The name is a mouthful, but checks if the key is bad.
 function CheckAuthKeyFromRequestIsBad(req) {
 	if(typeof req.body.serverKey === "undefined" || !CheckAuthKey(req.body.serverKey))
 	{
@@ -191,10 +184,10 @@ function GetServerList(req, res) {
 	// Run a loop though the list.
 	knownServers.forEach((knownServer) => {
 		// If we're hiding servers from the same IP, filter them out.
-		if(translateConfigOptionToBool(configuration.Pruning.dontShowServersOnSameIp)) {
+		if(configuration.Clients.dontShowSameIp) {
 			if(knownServer.ip === req.ip) {
 				loggerInstance.info(`Server '${knownServer.uuid}' looks like it's hosted on the same IP as this client, skipping.`);
-				return;
+				break;
 			}
 		}
 
@@ -212,10 +205,10 @@ function GetServerList(req, res) {
 	var returnedServerList = {
 		"count": serverList.length,
 		"servers": serverList,
-		"updateFrequency": configuration.Pruning.ingameUpdateFrequency
+		"updateFrequency": configuration.Clients.updateFrequency
 	};
 
-	loggerInstance.info(`Sent known servers to client '${req.ip}'.`);
+	loggerInstance.info(`Replied to '${req.ip}' with known servers.`);
 	return res.json(returnedServerList);
 }
 
@@ -226,7 +219,6 @@ function UpdateServerInList(req, res) {
 	// If anyone has a PR to improves this, please send me a PR.
 	var serverInQuestion = knownServers.filter((server) => (server.uuid === req.body.serverUuid));
 	var notTheServerInQuestion = knownServers.filter((server) => (server.uuid !== req.body.serverUuid));
-
 
 	// Holy shit I totally am not doing inline if statements back to back
 	// What the heck am I doing, it's a back to back if-spin double!
@@ -259,7 +251,7 @@ function AddToServerList(req, res) {
 	}
 
 	// Are we using access control? If so, are they allowed to do this?
-	if(translateConfigOptionToBool(configuration.Auth.useAccessControl) && !allowedServerAddresses.includes(req.ip)) {
+	if(configuration.Security.accessControlEnabled && !configuration.Security.allowedAddresses.includes(req.ip)) {
 		// Not allowed.
 		loggerInstance.warn(`Denied add request from ${req.ip}: Not in ACL.`);
 		return res.sendStatus(403);
@@ -283,7 +275,7 @@ function AddToServerList(req, res) {
 	
 	// Add the server to the list.
 	
-	/// Checkpoint 1: UUID Collision check
+	// Checkpoint 1: UUID Collision check
 	// If there's a UUID collision before we add the server then update the matching server.
 	if(CheckDoesServerAlreadyExist(req.body.serverUuid))
 	{
@@ -336,8 +328,8 @@ function AddToServerList(req, res) {
 	}
 }
 
-// apiRemoveFromServerList: Removes a server from the list.
-function apiRemoveFromServerList(req, res) {
+// RemoveServerFromList: Removes a server from the list.
+function RemoveServerFromList(req, res) {
 	// Doorstopper.
 	if(apiIsKeyFromRequestIsBad(req))
 	{
@@ -345,7 +337,7 @@ function apiRemoveFromServerList(req, res) {
 	}
 
 	// Are we using access control? If so, are they allowed to do this?
-	if(translateConfigOptionToBool(configuration.Auth.useAccessControl) && !allowedServerAddresses.includes(req.ip)) {
+	if(configuration.Security.accessControlEnabled && !configuration.Security.allowedAddresses.includes(req.ip)) {
 		// Not allowed.
 		loggerInstance.warn(`Denied delete request from ${req.ip}: IP address not allowed.`);
 		return res.sendStatus(403);
@@ -378,7 +370,7 @@ function apiRemoveFromServerList(req, res) {
 expressApp.get("/", GetServerList);
 expressApp.get("/list", GetServerList);
 expressApp.post("/add", AddToServerList);
-expressApp.post("/remove", apiRemoveFromServerList);
+expressApp.post("/remove", RemoveServerFromList);
 
 // Finally, start the application
 console.log("NodeLS: Node List Server Generation 3 (Development Version)");
