@@ -65,17 +65,18 @@ if (fs.existsSync(configFile)) {
 	// Read the configuration file.
 	fs.readFile(configFile, 'utf8', (err, data) => {
 
-    if (err) {
-        loggerInstance.error(`Configuration file problem. Failed reading file from disk: ${err}`);
-		// Abort.
-		process.exit(1);
-    } else {
-		loggerInstance.info("Stubbed load configuration file");
-		process.exit(0);
+		if (err) {
+			loggerInstance.error(`Configuration file problem. Failed reading file from disk: ${err}`);
+			// Abort.
+			process.exit(1);
+		} else {
+			loggerInstance.info("Stubbed load configuration file");
+			process.exit(0);
 
-        // parse JSON string to JSON object
-        // configuration = JSON.parse(data);
-    }
+			// parse JSON string to JSON object
+			// configuration = JSON.parse(data);
+		}
+	});
 } else {
 	loggerInstance.error("NodeListServer failed to start due to a missing configuration file.");
 	loggerInstance.error("Please ensure 'config.json' exists in the directory next to the script file.");
