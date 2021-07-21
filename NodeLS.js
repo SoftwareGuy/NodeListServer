@@ -98,11 +98,14 @@ function translateConfigOptionToBool(value) {
 
 // Constant references to various modules.
 const expressServer = require("express");
-const expressRateLimiter = require("express-rate-limit");
 const expressApp = expressServer();
 const bodyParser = require("body-parser");
 
 if(configuration.Security.rateLimiter) {
+	loggerInstance.info("Rate limiting enabled. Configuring...");
+	const expressRateLimiter = require("express-rate-limit");
+	
+
 	const limiter = expressRateLimiter({
 	  windowMs: configuration.Security.rateLimiterWindow * 60 * 1000, 	
 	  max: configuration.Security.rateLimiterMaxRequests
@@ -171,7 +174,6 @@ function DenyRequest (req, res) {
 
 // GetServerList: This handler returns a JSON array of servers to the clients.
 function GetServerList(req, res) {
-	
 	// A client wants the server list. Compile it and send out via JSON.
 	var serverList = [];
 
