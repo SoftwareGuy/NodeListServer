@@ -241,7 +241,7 @@ function UpdateServerInList(req, res) {
 		"capacity": serverInQuestion[0].capacity,
 		"extras": ((typeof req.body.serverExtras !== "undefined") ? req.body.serverExtras.trim() : serverInQuestion[0].extras),
 		"players": ((req.body.serverPlayers !== "undefined") ? ((isNaN(parseInt(req.body.serverPlayers, 10))) ? 0 : parseInt(req.body.serverPlayers, 10)) : serverInQuestion[0].players),
-		"capacity": ((typeof req.body.serverCapacity !== "undefined" || !isNaN(req.body.serverCapacity)) parseInt(req.body.serverCapacity, 10) : serverInQuestion[0].capacity),
+		"capacity": ((typeof req.body.serverCapacity !== "undefined" || !isNaN(req.body.serverCapacity)) ? parseInt(req.body.serverCapacity, 10) : serverInQuestion[0].capacity),
 		"lastUpdated": (Date.now() + (configuration.Pruning.inactiveServerTimeout * 60 * 1000))
 	}
 	
