@@ -186,7 +186,7 @@ function GetServerList(req, res) {
 		if(configuration.Clients.dontShowSameIp) {
 			if(knownServer.ip === req.ip) {
 				loggerInstance.info(`Server '${knownServer.uuid}' looks like it's hosted on the same IP as this client, skipping.`);
-				break;
+				return;
 			}
 		}
 
