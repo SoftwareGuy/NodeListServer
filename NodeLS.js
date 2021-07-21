@@ -56,8 +56,6 @@ var arguments = process.argv.slice(2);
 if(arguments.length > 0 && fs.existsSync(arguments[0])) {
 	loggerInstance.info(`Custom configuration file to load: ${arguments[0]}`);
 	configFile = arguments[0];
-} else {
-	loggerInstance.warn("Custom configuration file is missing, using default path.");	
 }
 
 // Do we have a configuration file?
@@ -69,9 +67,6 @@ if (fs.existsSync(configFile)) {
 			// Abort.
 			process.exit(1);
 		} else {
-			loggerInstance.info("Stubbed load configuration file");
-			process.exit(0);
-
 			// parse JSON string to JSON object
 			configuration = JSON.parse(data);
 		}
