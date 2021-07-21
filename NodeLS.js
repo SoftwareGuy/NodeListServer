@@ -69,6 +69,7 @@ if (fs.existsSync(configFile)) {
 		configuration = JSON.parse(configFileSource);
 	} catch(err) {
 		loggerInstance.error(`Error reading configuration file from disk: ${err}`);
+		process.exit(1);
 	}
 } else {
 	loggerInstance.error("NodeListServer failed to start due to a missing configuration file.");

@@ -4,11 +4,11 @@
     "listenPort": 8889
   },
   "Clients": {
-	  "updateFrequency": 300,
+	  "updateFrequency": 300
   },
   "Pruning": {
-	  "inactiveServerTimeout": 15,	  
-  }
+	  "inactiveServerTimeout": 15
+  },
   "Security": {
     "accessControlEnabled": false,
     "allowedAddresses": [
@@ -17,6 +17,6 @@
     "communicationKey": "ChangeMeDamnIt",	
 	"rateLimiter": true,
 	"rateLimiterWindow": 15,
-	"rateLimiterMaxRequests": 100	
+	"rateLimiterMaxRequests": 100
   }
 }
