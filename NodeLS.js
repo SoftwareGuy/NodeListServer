@@ -30,7 +30,7 @@ const fs = require("fs");
 // Used to store our configuration file data.
 // ---------------
 var configuration;
-var configFile = "config.json";
+var configFile = "./config.json";
 
 // ---------------
 // Logging configuration. Feel free to modify.
@@ -61,16 +61,15 @@ if(arguments.length > 0 && fs.existsSync(arguments[0])) {
 // Do we have a configuration file?
 if (fs.existsSync(configFile)) {
 	// Read the configuration file.
-	fs.readFileSync(configFile, 'utf8', (err, data) => {
-		if (err) {
-			loggerInstance.error(`Configuration file problem. Failed reading file from disk: ${err}`);
-			// Abort.
-			process.exit(1);
-		} else {
-			// parse JSON string to JSON object			
-			configuration = JSON.parse(data);
-		}
-	});
+	loggerInstance.info("Reading configuration file...");
+	
+	try {
+		const configFileSource = fs.readFileSync(configFile, 'utf8');
+		console.log(configFileSource);
+		configuration = JSON.parse(configFileSource);
+	} catch(err) {
+		loggerInstance.error(`Error reading configuration file from disk: ${err}`);
+	}
 } else {
 	loggerInstance.error("NodeListServer failed to start due to a missing configuration file.");
 	loggerInstance.error("Please ensure 'config.json' exists in the directory next to the script file.");
