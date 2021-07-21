@@ -67,7 +67,7 @@ if (fs.existsSync(configFile)) {
 			// Abort.
 			process.exit(1);
 		} else {
-			// parse JSON string to JSON object
+			// parse JSON string to JSON object			
 			configuration = JSON.parse(data);
 		}
 	});
@@ -78,6 +78,8 @@ if (fs.existsSync(configFile)) {
 	loggerInstance.error("Exiting...");
 	process.exit(1);
 }
+
+console.log(configuration);
 
 // Check if the configuration file is Generation 3. Otherwise, we bomb out.
 if(configuration.NLSConfigVersion != 3) {
