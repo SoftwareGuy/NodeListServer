@@ -4,7 +4,7 @@
     "listenPort": 8889
   },
   "Clients": {
-	  "updateFrequency": 300
+	  "updateFrequency": 300,
 	  "dontShowSameIp": false
   },
   "Pruning": {

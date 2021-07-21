@@ -65,7 +65,6 @@ if (fs.existsSync(configFile)) {
 	
 	try {
 		const configFileSource = fs.readFileSync(configFile, 'utf8');
-		console.log(configFileSource);
 		configuration = JSON.parse(configFileSource);
 	} catch(err) {
 		loggerInstance.error(`Error reading configuration file from disk: ${err}`);
