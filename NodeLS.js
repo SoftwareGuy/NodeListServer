@@ -64,7 +64,6 @@ if(arguments.length > 0 && fs.existsSync(arguments[0])) {
 if (fs.existsSync(configFile)) {
 	// Read the configuration file.
 	fs.readFileSync(configFile, 'utf8', (err, data) => {
-
 		if (err) {
 			loggerInstance.error(`Configuration file problem. Failed reading file from disk: ${err}`);
 			// Abort.
@@ -74,7 +73,7 @@ if (fs.existsSync(configFile)) {
 			process.exit(0);
 
 			// parse JSON string to JSON object
-			// configuration = JSON.parse(data);
+			configuration = JSON.parse(data);
 		}
 	});
 } else {
@@ -82,6 +81,13 @@ if (fs.existsSync(configFile)) {
 	loggerInstance.error("Please ensure 'config.json' exists in the directory next to the script file.");
 	loggerInstance.error("If you see this message repeatedly, ask for help at https://github.com/SoftwareGuy/NodeListServer.");
 	loggerInstance.error("Exiting...");
+	process.exit(1);
+}
+
+// Check if the configuration file is Generation 3. Otherwise, we bomb out.
+if(configuration.NLSConfigVersion != 3) {
+	loggerInstance.error("Wrong config file version. You probably need to update your configuration file.");
+	loggerInstance.error("Please see https://github.com/SoftwareGuy/NodeListServer for more information.");
 	process.exit(1);
 }
 
@@ -102,13 +108,15 @@ const expressRateLimiter = require("express-rate-limit");
 const expressApp = expressServer();
 const bodyParser = require("body-parser");
 
-// Setup the rate limiter...
-const limiter = expressRateLimiter({
-  windowMs: configuration.Security.rateLimiterWindowMs, 	
-  max: configuration.Security.rateLimiterMaxApiRequestsPerWindow
-});
+if(configuration.Security.rateLimiter) {
+	const limiter = expressRateLimiter({
+	  windowMs: configuration.Security.rateLimiterWindow * 60 * 1000, 	
+	  max: configuration.Security.rateLimiterMaxRequests
+	});
 
-expressApp.use(limiter);
+	expressApp.use(limiter);
+}
+
 expressApp.use(bodyParser.json());
 expressApp.use(bodyParser.urlencoded({ extended: true }));
 
@@ -116,14 +124,16 @@ expressApp.use(bodyParser.urlencoded({ extended: true }));
 var knownServers = [];
 
 var allowedServerAddresses = [];
+/*
 if(translateConfigOptionToBool(configuration.Auth.useAccessControl)) {
 	allowedServerAddresses = configuration.Auth.allowedIpAddresses.split(",");
 }
+*/
 
 // - Authentication
-// apiCheckKey: Checks to see if the client specified key matches.
-function apiCheckKey(clientKey) {
-	if(clientKey === configuration.Auth.communicationKey) {
+// CheckAuthKey: Checks to see if the client specified key matches.
+function CheckAuthKey(clientKey) {
+	if(clientKey === configuration.Security.communicationKey) {
 		return true;
 	} else {
 		return false;
@@ -131,10 +141,10 @@ function apiCheckKey(clientKey) {
 }
 
 // apiIsKeyFromRequestIsBad: The name is a mouthful, but checks if the key is bad.
-function apiIsKeyFromRequestIsBad(req) {
-	if(typeof req.body.serverKey === "undefined" || !apiCheckKey(req.body.serverKey))
+function CheckAuthKeyFromRequestIsBad(req) {
+	if(typeof req.body.serverKey === "undefined" || !CheckAuthKey(req.body.serverKey))
 	{
-		loggerInstance.warn(`${req.ip} used a wrong key: ${req.body.serverKey}`);
+		loggerInstance.warn(`Failed key check from ${req.ip}: ${req.body.serverKey}`);
 		return true;
 	} else {
 		return false;
@@ -142,8 +152,8 @@ function apiIsKeyFromRequestIsBad(req) {
 }
 
 // - Sanity Checking
-// apiDoesServerExist: Checks if the server exists in our cache, by UUID.
-function apiDoesServerExist(uuid) {
+// CheckDoesServerAlreadyExist: Checks if the server exists in our cache, by UUID.
+function CheckDoesServerAlreadyExist(uuid) {
 	var doesExist = knownServers.filter((server) => server.uuid === uuid);
 	if(doesExist.length > 0) {
 		return true;
@@ -153,8 +163,8 @@ function apiDoesServerExist(uuid) {
 	return false;
 }
 
-// apiDoesThisServerExistByAddressPort: Checks if the server exists in our cache, by IP address and port.
-function apiDoesThisServerExistByAddressPort(ipAddress, port) {
+// CheckExistingServerCollision: Checks if the server exists in our cache, by IP address and port.
+function CheckExistingServerCollision(ipAddress, port) {
 	var doesExist = knownServers.filter((servers) => (servers.ip === ipAddress && servers.port === port));
 	if(doesExist.length > 0) {
 		return true;
@@ -165,25 +175,15 @@ function apiDoesThisServerExistByAddressPort(ipAddress, port) {
 }
 
 // -- Request Handling
-// denyRequest: Generic function that denies requests.
-function denyRequest (req, res) {
-	loggerInstance.warn(`Request from ${req.ip} denied. Tried ${req.method} method on path: ${req.path}`);
+// DenyRequest: Generic function that denies requests.
+function DenyRequest (req, res) {
+	// Shush this up.
+	// loggerInstance.warn(`Request from ${req.ip} denied. Tried ${req.method} method on path: ${req.path}`);
 	return res.sendStatus(400);
 }
 
-// apiGetServerList: This handler returns a JSON array of servers to the clients.
-function apiGetServerList(req, res) {
-	// Generation 3 change: don't require a communication key for clients querying the list.
-	/* if(apiIsKeyFromRequestIsBad(req))
-	{
-		return res.sendStatus(400);
-	}
-	else
-	{
-		// Shows if keys match for those getting list server details.
-		loggerInstance.info(`${req.ip} accepted; communication key matched: '${req.body.serverKey}'`);
-	}
-	*/
+// GetServerList: This handler returns a JSON array of servers to the clients.
+function GetServerList(req, res) {
 	
 	// A client wants the server list. Compile it and send out via JSON.
 	var serverList = [];
@@ -222,64 +222,41 @@ function apiGetServerList(req, res) {
 	return res.json(returnedServerList);
 }
 
-// apiUpdateServerInList: Updates a server in the list.
-function apiUpdateServerInList(req, res) {
+// UpdateServerInList: Updates a server in the list.
+function UpdateServerInList(req, res) {
 
 	// TODO: Improve this. This feels ugly hack tier and I feel it could be more elegant.
 	// If anyone has a PR to improves this, please send me a PR.
 	var serverInQuestion = knownServers.filter((server) => (server.uuid === req.body.serverUuid));
 	var notTheServerInQuestion = knownServers.filter((server) => (server.uuid !== req.body.serverUuid));
 
-	// I hate it when we get arrays back from that filter function...
-	// Pretty sure this could be improved. PR welcome.
-	var updatedServer = [];
-	updatedServer["uuid"] = serverInQuestion[0].uuid;
-	updatedServer["ip"] = serverInQuestion[0].ip;
-	
-	updatedServer["port"] = serverInQuestion[0].port;
-	updatedServer["capacity"] = serverInQuestion[0].capacity;
 
-	if(typeof req.body.serverExtras !== "undefined") {
-		updatedServer["extras"] = req.body.serverExtras.trim();
-	} else {
-		updatedServer["extras"] = serverInQuestion[0].extras;
-	}
-
-	if(typeof req.body.serverName !== "undefined") {
-		updatedServer["name"] = req.body.serverName.trim();
-	} else {
-		updatedServer["name"] = serverInQuestion[0].name;
-	}
-
-	if(typeof req.body.serverPlayers !== "undefined") {
-		if(isNaN(parseInt(req.body.serverPlayers, 10))) {
-			updatedServer["players"] = 0;
-		} else {
-			updatedServer["players"] = parseInt(req.body.serverPlayers, 10);
-		}
-	} else {
-		updatedServer["players"] = serverInQuestion[0].players;
+	// Holy shit I totally am not doing inline if statements back to back
+	// What the heck am I doing, it's a back to back if-spin double!
+	var updatedServer = {
+		"uuid": serverInQuestion[0].uuid,
+		"name": ((typeof req.body.serverExtras !== "undefined") ? req.body.serverName.trim() : serverInQuestion[0].name)
+		"ip": serverInQuestion[0].ip,
+		"port": serverInQuestion[0].port,
+		"capacity": serverInQuestion[0].capacity,
+		"extras": ((typeof req.body.serverExtras !== "undefined") ? req.body.serverExtras.trim() : serverInQuestion[0].extras),
+		"players": ((req.body.serverPlayers !== "undefined") ? ((isNaN(parseInt(req.body.serverPlayers, 10))) ? 0 : parseInt(req.body.serverPlayers, 10)) : serverInQuestion[0].players),
+		"capacity": ((typeof req.body.serverCapacity !== "undefined" || !isNaN(req.body.serverCapacity)) parseInt(req.body.serverCapacity, 10) : serverInQuestion[0].capacity),
+		"lastUpdated": (Date.now() + (configuration.Pruning.inactiveServerTimeout * 60 * 1000))
 	}
 	
-	// Server capacity might have changed, let's update that if needed
-	if(typeof req.body.serverCapacity !== "undefined" || !isNaN(req.body.serverCapacity)) {		
-		updatedServer["capacity"] = parseInt(req.body.serverCapacity, 10);
-	}
-
-	updatedServer["lastUpdated"] = (Date.now() + (configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000));
-
 	// Push the server back onto the stack.
 	notTheServerInQuestion.push(updatedServer);
 	knownServers = notTheServerInQuestion;
 
-	loggerInstance.info(`Updated information for '${updatedServer.name}', requested by ${req.ip}`);
+	loggerInstance.info(`'${updatedServer.name}' was updated by ${req.ip}`);
 	return res.send("OK\n");
 }
 
-// apiAddToServerList: Adds a server to the list.
-function apiAddToServerList(req, res) {
+// AddToServerList: Adds a server to the list.
+function AddToServerList(req, res) {
 	// Doorstopper.
-	if(apiIsKeyFromRequestIsBad(req))
+	if(CheckAuthKeyFromRequestIsBad(req))
 	{
 		return res.sendStatus(400);
 	}
@@ -311,17 +288,17 @@ function apiAddToServerList(req, res) {
 	
 	/// Checkpoint 1: UUID Collision check
 	// If there's a UUID collision before we add the server then update the matching server.
-	if(apiDoesServerExist(req.body.serverUuid))
+	if(CheckDoesServerAlreadyExist(req.body.serverUuid))
 	{
 		// Collision - update!
 		loggerInstance.info(`Server already known to us; updating server UUID '${req.body.serverUuid}'...'`);
-		apiUpdateServerInList(req, res);
+		UpdateServerInList(req, res);
 	}
 	else
 	{
 		// Checkpoint 2: IP and Port collision check
 		// If there's already a server on this IP or Port then don't add the server to the cache. This will stop duplicates.
-		if(apiDoesThisServerExistByAddressPort(req.ip, req.body.serverPort)) {
+		if(CheckExistingServerCollision(req.ip, req.body.serverPort)) {
 			// Collision - abort!
 			loggerInstance.warn(`Denied add request from ${req.ip}: Server IP/Port collision.`);
 			return res.sendStatus(400);
@@ -388,7 +365,7 @@ function apiRemoveFromServerList(req, res) {
 		return res.sendStatus(400);
 	}
 	
-	if(!apiDoesServerExist(req.body.serverUuid, knownServers)) {
+	if(!CheckDoesServerAlreadyExist(req.body.serverUuid, knownServers)) {
 		loggerInstance.warn(`Denied delete request from ${req.ip}: No such server known - ${req.body.serverUuid}`);
 		return res.sendStatus(400);
 	} else {
@@ -401,13 +378,14 @@ function apiRemoveFromServerList(req, res) {
 // -- Start the application -- //
 // Coburn: Moved the actual startup routines here to help boost Codacy's opinion.
 // Callbacks to various functions, leave this alone unless you know what you're doing.
-expressApp.get("/", apiGetServerList);
-expressApp.get("/list", apiGetServerList);
-expressApp.post("/add", apiAddToServerList);
+expressApp.get("/", GetServerList);
+expressApp.get("/list", GetServerList);
+expressApp.post("/add", AddToServerList);
 expressApp.post("/remove", apiRemoveFromServerList);
 
 // Finally, start the application
 console.log("NodeLS: Node List Server Generation 3 (Development Version)");
 console.log("Report bugs, fork the project and support the developer on GitHub at https://github.com/SoftwareGuy/NodeListServer");
 
-expressApp.listen(configuration.Core.listenPort, () => console.log(`NodeLS started listening on ${configuration.Core.listenPort}.`));
+expressApp.listen(configuration.Core.listenPort,
+ () => console.log(`NodeLS listening on ${configuration.Core.listenPort}.`));

@@ -1,0 +1,22 @@
+{
+  "NLSConfigVersion": 3,
+  "Core": {
+    "listenPort": 8889
+  },
+  "Clients": {
+	  "updateFrequency": 300,
+  },
+  "Pruning": {
+	  "inactiveServerTimeout": 15,	  
+  }
+  "Security": {
+    "accessControlEnabled": false,
+    "allowedAddresses": [
+      "127.0.0.1"
+    ],
+    "communicationKey": "ChangeMeDamnIt",	
+	"rateLimiter": true,
+	"rateLimiterWindow": 15,
+	"rateLimiterMaxRequests": 100	
+  }
+}
