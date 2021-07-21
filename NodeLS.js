@@ -79,8 +79,6 @@ if (fs.existsSync(configFile)) {
 	process.exit(1);
 }
 
-console.log(configuration);
-
 // Check if the configuration file is Generation 3. Otherwise, we bomb out.
 if(configuration.NLSConfigVersion != 3) {
 	loggerInstance.error("Wrong config file version. You probably need to update your configuration file.");
