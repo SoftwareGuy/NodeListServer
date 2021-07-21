@@ -235,7 +235,7 @@ function UpdateServerInList(req, res) {
 	// What the heck am I doing, it's a back to back if-spin double!
 	var updatedServer = {
 		"uuid": serverInQuestion[0].uuid,
-		"name": ((typeof req.body.serverExtras !== "undefined") ? req.body.serverName.trim() : serverInQuestion[0].name)
+		"name": ((typeof req.body.serverExtras !== "undefined") ? req.body.serverName.trim() : serverInQuestion[0].name),
 		"ip": serverInQuestion[0].ip,
 		"port": serverInQuestion[0].port,
 		"capacity": serverInQuestion[0].capacity,
