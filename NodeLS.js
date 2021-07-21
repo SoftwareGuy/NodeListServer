@@ -24,13 +24,13 @@
 // Require some essential libraries and modules.
 // ---------------
 const log4js = require("log4js");
-const iniParser = require("multi-ini");
 const fs = require("fs");
 
 // ---------------
 // Used to store our configuration file data.
 // ---------------
 var configuration;
+var configFile = "config.json";
 
 // ---------------
 // Logging configuration. Feel free to modify.
@@ -47,15 +47,39 @@ log4js.configure({
 
 var loggerInstance = log4js.getLogger('NodeListServer');
 
-// Do we have a configuration file?
-if (fs.existsSync("config.ini")) {
-    configuration = iniParser.read("./config.ini");
-    // Use only for checking if configuration is valid, and not in production.
-    // console.log(configuration);
+// ---------------
+// Determine if we've got a configuration file path
+// supplied by the user at the console...
+// ---------------
+var arguments = process.argv.slice(2);
+
+if(arguments.length > 0 && fs.existsSync(arguments[0])) {
+	loggerInstance.info(`Custom configuration file to load: ${arguments[0]}`);
+	configFile = arguments[0];
 } else {
-	loggerInstance.error("NodeListServer failed to start due to a missing 'config.ini' file.");
-	loggerInstance.error("Please ensure one exists in the directory next to the script file.");
-	loggerInstance.error("If you see this message repeatedly, you might have found a bug worth reporting at https://github.com/SoftwareGuy/NodeListServer.");
+	loggerInstance.warn("Custom configuration file is missing, using default path.");	
+}
+
+// Do we have a configuration file?
+if (fs.existsSync(configFile)) {
+	// Read the configuration file.
+	fs.readFile(configFile, 'utf8', (err, data) => {
+
+    if (err) {
+        loggerInstance.error(`Configuration file problem. Failed reading file from disk: ${err}`);
+		// Abort.
+		process.exit(1);
+    } else {
+		loggerInstance.info("Stubbed load configuration file");
+		process.exit(0);
+
+        // parse JSON string to JSON object
+        // configuration = JSON.parse(data);
+    }
+} else {
+	loggerInstance.error("NodeListServer failed to start due to a missing configuration file.");
+	loggerInstance.error("Please ensure 'config.json' exists in the directory next to the script file.");
+	loggerInstance.error("If you see this message repeatedly, ask for help at https://github.com/SoftwareGuy/NodeListServer.");
 	loggerInstance.error("Exiting...");
 	process.exit(1);
 }
