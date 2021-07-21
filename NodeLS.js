@@ -63,7 +63,7 @@ if(arguments.length > 0 && fs.existsSync(arguments[0])) {
 // Do we have a configuration file?
 if (fs.existsSync(configFile)) {
 	// Read the configuration file.
-	fs.readFile(configFile, 'utf8', (err, data) => {
+	fs.readFileSync(configFile, 'utf8', (err, data) => {
 
 		if (err) {
 			loggerInstance.error(`Configuration file problem. Failed reading file from disk: ${err}`);
