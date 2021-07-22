@@ -214,18 +214,18 @@ function UpdateServerInList(req, res) {
 	// What the heck am I doing, it's a back to back if-spin double!
 	
 	// Do not update the UUID. That cannot be changed.
-	serverInQuestion[0].name = (typeof req.body.serverExtras !== "undefined") ? req.body.serverName.trim() : serverInQuestion[0].name,
+	serverInQuestion[0].name = (typeof req.body.serverExtras !== "undefined") ? req.body.serverName.trim() : serverInQuestion[0].name;
 	
 	// Only allow important server information changing if configuration allows it.	
 	if(configuration.Security.allowChangingImportantServerDetails) {
-		serverInQuestion[0].ip = ((typeof req.body.serverIp !== "undefined") ? req.body.serverIp.trim() : serverInQuestion[0].ip),
+		serverInQuestion[0].ip = ((typeof req.body.serverIp !== "undefined") ? req.body.serverIp.trim() : serverInQuestion[0].ip);
 		
 		// Port requires some sanity checks.
 		int newPort = req.body.serverPort;
-		serverInQuestion[0].port = (typeof newPort !== "undefined" && !isNaN(newPort) && newPort < 0 && newPort > 65535) ? newPort : serverInQuestion[0].port,
+		serverInQuestion[0].port = (typeof newPort !== "undefined" && !isNaN(newPort) && newPort < 0 && newPort > 65535) ? newPort : serverInQuestion[0].port;
 	}
 	
-	serverInQuestion[0].data = (req.body.serverData !== "undefined") ? req.body.serverData.trim() : serverInQuestion[0].data),
+	serverInQuestion[0].data = (req.body.serverData !== "undefined") ? req.body.serverData.trim() : serverInQuestion[0].data);
 	serverInQuestion[0].lastUpdated = Date.now() + (configuration.Pruning.inactiveServerTimeout * 60 * 1000);
 	
 	// Push the server back onto the stack.
