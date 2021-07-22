@@ -231,7 +231,7 @@ function UpdateServerInList(req, res) {
 	// Push the server back onto the stack.
 	otherServers.push(serverInQuestion);
 
-	loggerInstance.info(`Updated server '${newServer.uuid}' ('${newServer.name}') which was requested by ${req.ip}.`);
+	loggerInstance.info(`Updated server '${serverInQuestion[0].uuid}' ('${serverInQuestion[0].name}') which was requested by ${req.ip}.`);
 	return res.sendStatus(200);
 }
 
