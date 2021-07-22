@@ -178,7 +178,8 @@ function GetServerList(req, res) {
 
 	// Clean out the old ones.
 	knownServers = knownServers.filter((freshServer) => (freshServer.lastUpdated >= Date.now()));
-
+	console.log(`We have ${knownServers.length} known servers.`);
+	
 	// Run a loop though the list.
 	knownServers.forEach((knownServer) => {
 		// If we're hiding servers from the same IP, filter them out.
@@ -311,7 +312,7 @@ function AddToServerList(req, res) {
 
 		knownServers.push(newServer);
 
-		loggerInstance.info(`Added server '${req.body.serverUuid}' ('${req.body.serverName}') from ${req.ip} to cache.`);
+		loggerInstance.info(`Registered server '${newServer.uuid}' ('${newServer.name}') from ${req.ip} in cache.`);
 		return res.sendStatus(200);
 	}
 }
