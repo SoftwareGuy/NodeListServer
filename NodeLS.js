@@ -221,7 +221,7 @@ function UpdateServerInList(req, res) {
 		serverInQuestion[0].ip = ((typeof req.body.serverIp !== "undefined") ? req.body.serverIp.trim() : serverInQuestion[0].ip);
 		
 		// Port requires some sanity checks.
-		int newPort = req.body.serverPort;
+		var newPort = req.body.serverPort;
 		serverInQuestion[0].port = (typeof newPort !== "undefined" && !isNaN(newPort) && newPort < 0 && newPort > 65535) ? newPort : serverInQuestion[0].port;
 	}
 	
