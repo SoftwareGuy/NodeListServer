@@ -177,30 +177,18 @@ function GetServerList(req, res) {
 	var serverList = [];
 
 	// Clean out the old ones.
-	console.log(`We have ${knownServers.length} known servers.`);
-	console.log(knownServers);
-	
 	knownServers = knownServers.filter((freshServer) => (freshServer.lastUpdated >= Date.now()));
-		
 	// Run a loop though the list.
 	knownServers.forEach((knownServer) => {
 		// If we're hiding servers from the same IP, filter them out.
 		if(configuration.Clients.dontShowSameIp) {
 			if(knownServer.ip === req.ip) {
-				loggerInstance.info(`Server '${knownServer.uuid}' looks like it's hosted on the same IP as this client, skipping.`);
+				loggerInstance.info(`Server '${knownServer.name}' looks like it's hosted on the same IP as this client, skipping.`);
 				return;
 			}
 		}
 
 		serverList.push(knownServer);
-		/*{ 
-			"ip": knownServer.ip, 
-			"name": knownServer.name, 
-			"port": parseInt(knownServer.port, 10), 
-			"players": parseInt(knownServer.players, 10),
-			"capacity": parseInt(knownServer.capacity, 10),
-			"extras": knownServer.extras
-		}*/
 	});
 
 	// Temporary holder for the server list we're about to send.
@@ -219,28 +207,31 @@ function UpdateServerInList(req, res) {
 
 	// TODO: Improve this. This feels ugly hack tier and I feel it could be more elegant.
 	// If anyone has a PR to improves this, please send me a PR.
-	var serverInQuestion = knownServers.filter((server) => (server.uuid === req.body.serverUuid));
-	var notTheServerInQuestion = knownServers.filter((server) => (server.uuid !== req.body.serverUuid));
+	var serverInQuestion = knownServers.filter((server) => (server.uuid === req.body.serverUuid.trim()));
+	var otherServers = knownServers.filter((server) => (server.uuid !== req.body.serverUuid));
 
 	// Holy shit I totally am not doing inline if statements back to back
 	// What the heck am I doing, it's a back to back if-spin double!
-	var updatedServer = {
-		"uuid": serverInQuestion[0].uuid,
-		"name": ((typeof req.body.serverExtras !== "undefined") ? req.body.serverName.trim() : serverInQuestion[0].name),
-		"ip": serverInQuestion[0].ip,
-		"port": serverInQuestion[0].port,
-		"capacity": serverInQuestion[0].capacity,
-		"extras": ((typeof req.body.serverExtras !== "undefined") ? req.body.serverExtras.trim() : serverInQuestion[0].extras),
-		"players": ((req.body.serverPlayers !== "undefined") ? ((isNaN(parseInt(req.body.serverPlayers, 10))) ? 0 : parseInt(req.body.serverPlayers, 10)) : serverInQuestion[0].players),
-		"capacity": ((typeof req.body.serverCapacity !== "undefined" || !isNaN(req.body.serverCapacity)) ? parseInt(req.body.serverCapacity, 10) : serverInQuestion[0].capacity),
-		"lastUpdated": (Date.now() + (configuration.Pruning.inactiveServerTimeout * 60 * 1000))
+	
+	// Do not update the UUID. That cannot be changed.
+	serverInQuestion[0].name = (typeof req.body.serverExtras !== "undefined") ? req.body.serverName.trim() : serverInQuestion[0].name,
+	
+	// Only allow important server information changing if configuration allows it.	
+	if(configuration.Security.allowChangingImportantServerDetails) {
+		serverInQuestion[0].ip = ((typeof req.body.serverIp !== "undefined") ? req.body.serverIp.trim() : serverInQuestion[0].ip),
+		
+		// Port requires some sanity checks.
+		int newPort = req.body.serverPort;
+		serverInQuestion[0].port = (typeof newPort !== "undefined" && !isNaN(newPort) && newPort < 0 && newPort > 65535) ? newPort : serverInQuestion[0].port,
 	}
 	
+	serverInQuestion[0].data = (req.body.serverData !== "undefined") ? req.body.serverData.trim() : serverInQuestion[0].data),
+	serverInQuestion[0].lastUpdated = Date.now() + (configuration.Pruning.inactiveServerTimeout * 60 * 1000);
+	
 	// Push the server back onto the stack.
-	notTheServerInQuestion.push(updatedServer);
-	knownServers = notTheServerInQuestion;
+	otherServers.push(serverInQuestion);
 
-	loggerInstance.info(`'${updatedServer.name}' was updated by ${req.ip}`);
+	loggerInstance.info(`Updated server '${newServer.uuid}' ('${newServer.name}') which was requested by ${req.ip}.`);
 	return res.sendStatus(200);
 }
 
@@ -248,9 +239,7 @@ function UpdateServerInList(req, res) {
 function AddToServerList(req, res) {
 	// Doorstopper.
 	if(CheckAuthKeyFromRequestIsBad(req))
-	{
 		return res.sendStatus(400);
-	}
 
 	// Are we using access control? If so, are they allowed to do this?
 	if(configuration.Security.accessControlEnabled && !configuration.Security.allowedAddresses.includes(req.ip)) {
@@ -266,57 +255,47 @@ function AddToServerList(req, res) {
 		return res.sendStatus(400);
 	}
 	
+	// Check if the UUID is null (must have one)
 	if(typeof req.body.serverUuid === "undefined") {
 		loggerInstance.warn(`Denied add request from ${req.ip}. Server UUID was not specified.`);		
 		return res.sendStatus(400);
 	}
 	
-	/* No longer required
-	if(typeof req.body.serverUuid === "undefined" || typeof req.body.serverName === "undefined" || typeof req.body.serverPort === "undefined") {
-		loggerInstance.warn(`Denied add request from ${req.ip}: UUID, name and/or port is sus or bogus.`);
-		return res.sendStatus(400);
-	}
-	*/
-
+	// Check if our port is null, not a number or out of range
 	if(typeof req.body.serverPort === "undefined" || isNaN(req.body.serverPort) || req.body.serverPort < 0 || req.body.serverPort > 65535) {
 		loggerInstance.warn(`Denied add request from ${req.ip}. Port is null or out of bounds.`);
 		return res.sendStatus(400);
 	}
 	
-	// Add the server to the list.
-	
-	// Checkpoint 1: UUID Collision check
 	// If there's a UUID collision before we add the server then update the matching server.
 	if(CheckDoesServerAlreadyExist(req.body.serverUuid))
 	{
 		// Collision - update!
-		loggerInstance.info(`Server already known to us; updating server UUID '${req.body.serverUuid}'...'`);
+		loggerInstance.info(`Server already known to us; updating server UUID '${req.body.serverUuid}'.`);
 		UpdateServerInList(req, res);
+		return;
 	}
-	else
-	{
-		// Checkpoint 2: IP and Port collision check
-		// If there's already a server on this IP or Port then don't add the server to the cache. This will stop duplicates.
-		if(CheckExistingServerCollision(req.ip, req.body.serverPort)) {
-			// Collision - abort!
-			loggerInstance.warn(`Denied add request from ${req.ip}. Server IP/Port collision.`);
-			return res.sendStatus(400);
-		}
-		
-		var newServer = { 
-			"uuid": req.body.serverUuid.trim(),
-			"name": (typeof req.body.serverName !== "undefined") ? req.body.serverName.trim() : "Untitled Server",
-			"ip": req.ip, 
-			"port": parseInt(req.body.serverPort, 10),
-			"data": (typeof req.body.serverExtras !== "undefined") ? req.body.serverExtras.trim() : "",
-			"lastUpdated": (Date.now() + (configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000))			
-		};
 
-		knownServers.push(newServer);
-
-		loggerInstance.info(`Registered server '${newServer.uuid}' ('${newServer.name}') from ${req.ip} in cache.`);
-		return res.sendStatus(200);
+	if(CheckExistingServerCollision(req.ip, req.body.serverPort)) {
+		// Collision - abort!
+		loggerInstance.warn(`Denied add request from ${req.ip}. Server IP/Port collision.`);
+		return res.sendStatus(400);
 	}
+	
+	var newServer = { 
+		"uuid": req.body.serverUuid.trim(),
+		"name": (typeof req.body.serverName !== "undefined") ? req.body.serverName.trim() : "Untitled Server",
+		"ip": req.ip, 
+		"port": parseInt(req.body.serverPort, 10),
+		"data": (typeof req.body.serverData !== "undefined") ? req.body.serverData.trim() : "",
+		"lastUpdated": (Date.now() + (configuration.Pruning.inactiveServerTimeout * 60 * 1000))
+	};
+
+	// Add the server to the list.
+	knownServers.push(newServer);
+
+	loggerInstance.info(`Registered server '${newServer.uuid}' ('${newServer.name}') from ${req.ip} in cache.`);
+	return res.sendStatus(200);	
 }
 
 // RemoveServerFromList: Removes a server from the list.

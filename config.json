@@ -15,6 +15,7 @@
     "allowedAddresses": [
       "::ffff:127.0.0.1"
     ],
+	"allowChangingImportantServerDetails": false,
     "communicationKey": "ChangeMeDamnIt",	
 	"rateLimiter": true,
 	"rateLimiterWindow": 15,
