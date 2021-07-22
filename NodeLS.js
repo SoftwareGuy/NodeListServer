@@ -116,7 +116,7 @@ if(configuration.Security.rateLimiter) {
 expressApp.use(bodyParser.json());
 expressApp.use(bodyParser.urlencoded({ extended: true }));
 
-// Server memory array cache.
+// Server array cache.
 var knownServers = [];
 
 // - Authentication
@@ -256,18 +256,26 @@ function AddToServerList(req, res) {
 	}
 
 	// Sanity Checks
+	// Checks if POST Body is undefined (null)
 	if(typeof req.body === "undefined") {
-		loggerInstance.warn(`Denied add request from ${req.ip}: Missing request POST body.`);
+		loggerInstance.warn(`Denied add request from ${req.ip}: Missing request data.`);
 		return res.sendStatus(400);
 	}
 	
+	if(typeof req.body.serverUuid === "undefined") {
+		loggerInstance.warn(`Denied add request from ${req.ip}: Server UUID was not specified.`);		
+		return res.sendStatus(400);
+	}
+	
+	/* No longer required
 	if(typeof req.body.serverUuid === "undefined" || typeof req.body.serverName === "undefined" || typeof req.body.serverPort === "undefined") {
 		loggerInstance.warn(`Denied add request from ${req.ip}: UUID, name and/or port is sus or bogus.`);
 		return res.sendStatus(400);
 	}
+	*/
 
-	if(isNaN(req.body.serverPort) || req.body.serverPort < 0 || req.body.serverPort > 65535) {
-		loggerInstance.warn(`Denied add request from ${req.ip}: Port out of bounds.`);
+	if(typeof req.body.serverPort === "undefined" || isNaN(req.body.serverPort) || req.body.serverPort < 0 || req.body.serverPort > 65535) {
+		loggerInstance.warn(`Denied add request from ${req.ip}: Port is null or out of bounds.`);
 		return res.sendStatus(400);
 	}
 	
@@ -290,12 +298,11 @@ function AddToServerList(req, res) {
 			loggerInstance.warn(`Denied add request from ${req.ip}: Server IP/Port collision.`);
 			return res.sendStatus(400);
 		}
-
-		// We'll get the IP address directly, don't worry about that
+		
 		var newServer = { 
-			"uuid": req.body.serverUuid, 
+			"uuid": req.body.serverUuid.trim(),
+			"name": (typeof req.body.serverName === "undefined") ? req.body.serverName.trim() : "Untitled Server",
 			"ip": req.ip, 
-			"name": req.body.serverName, 
 			"port": parseInt(req.body.serverPort, 10),
 			"lastUpdated": (Date.now() + (configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000))
 		};
@@ -322,7 +329,7 @@ function AddToServerList(req, res) {
 		knownServers.push(newServer);
 
 		loggerInstance.info(`Added server '${req.body.serverUuid}' ('${req.body.serverName}') from ${req.ip} to cache.`);
-		return res.send("OK\n");
+		return res.sendStatus(200);
 	}
 }
 
@@ -358,15 +365,15 @@ function RemoveServerFromList(req, res) {
 	} else {
 		knownServers = knownServers.filter((server) => server.uuid !== req.body.serverUuid);
 		loggerInstance.info(`Deleted server '${req.body.serverUuid}' from cache (requested by ${req.ip}).`);
-		return res.send("OK\n");
+		return res.sendStatus(200);
 	}
 }
 
-// Callbacks to various functions, leave this alone unless you know what you're doing.
+// Define routes to various functions, leave this alone unless you know what you're doing.
 expressApp.get("/", GetServerList);
 expressApp.get("/list", GetServerList);
 expressApp.post("/add", AddToServerList);
-expressApp.post("/remove", RemoveServerFromList);
+expressApp.post("/delete", RemoveServerFromList);
 
 // Finally, start the application
 console.log("NodeLS: Node List Server Generation 3 (Development Version)");
@@ -374,3 +381,13 @@ console.log("Report bugs, fork the project and support the developer on GitHub a
 
 expressApp.listen(configuration.Core.listenPort,
  () => console.log(`NodeLS listening on ${configuration.Core.listenPort}.`));
+
+/*
+ * Scratchpad - to be removed
+	"uuid": "",
+	"name": "",
+	"ipAddress": "",
+	"port": 0,
+	"gameId": "",
+	"data": ""
+*/
