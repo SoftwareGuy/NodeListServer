@@ -133,7 +133,7 @@ function CheckAuthKey(clientKey) {
 function CheckAuthKeyFromRequestIsBad(req) {
 	if(typeof req.body.serverKey === "undefined" || !CheckAuthKey(req.body.serverKey))
 	{
-		loggerInstance.warn(`Auth Key mismatch from ${req.ip}: ${req.body.serverKey}`);
+		loggerInstance.warn(`Auth Key mismatch from ${req.ip}, failed key was ${req.body.serverKey}`);
 		return true;
 	} else {
 		return false;
@@ -259,12 +259,12 @@ function AddToServerList(req, res) {
 	// Sanity Checks
 	// Checks if POST Body is undefined (null)
 	if(typeof req.body === "undefined") {
-		loggerInstance.warn(`Denied add request from ${req.ip}: Missing request data.`);
+		loggerInstance.warn(`Denied add request from ${req.ip}. Missing request data.`);
 		return res.sendStatus(400);
 	}
 	
 	if(typeof req.body.serverUuid === "undefined") {
-		loggerInstance.warn(`Denied add request from ${req.ip}: Server UUID was not specified.`);		
+		loggerInstance.warn(`Denied add request from ${req.ip}. Server UUID was not specified.`);		
 		return res.sendStatus(400);
 	}
 	
@@ -276,7 +276,7 @@ function AddToServerList(req, res) {
 	*/
 
 	if(typeof req.body.serverPort === "undefined" || isNaN(req.body.serverPort) || req.body.serverPort < 0 || req.body.serverPort > 65535) {
-		loggerInstance.warn(`Denied add request from ${req.ip}: Port is null or out of bounds.`);
+		loggerInstance.warn(`Denied add request from ${req.ip}. Port is null or out of bounds.`);
 		return res.sendStatus(400);
 	}
 	
@@ -296,7 +296,7 @@ function AddToServerList(req, res) {
 		// If there's already a server on this IP or Port then don't add the server to the cache. This will stop duplicates.
 		if(CheckExistingServerCollision(req.ip, req.body.serverPort)) {
 			// Collision - abort!
-			loggerInstance.warn(`Denied add request from ${req.ip}: Server IP/Port collision.`);
+			loggerInstance.warn(`Denied add request from ${req.ip}. Server IP/Port collision.`);
 			return res.sendStatus(400);
 		}
 		
