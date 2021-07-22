@@ -302,7 +302,7 @@ function AddToServerList(req, res) {
 		
 		var newServer = { 
 			"uuid": req.body.serverUuid.trim(),
-			"name": (typeof req.body.serverName === "undefined") ? req.body.serverName.trim() : "Untitled Server",
+			"name": (typeof req.body.serverName !== "undefined") ? req.body.serverName.trim() : "Untitled Server",
 			"ip": req.ip, 
 			"port": parseInt(req.body.serverPort, 10),
 			"data": (typeof req.body.serverExtras !== "undefined") ? req.body.serverExtras.trim() : "",
