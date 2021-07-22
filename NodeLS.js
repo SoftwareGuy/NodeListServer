@@ -177,9 +177,11 @@ function GetServerList(req, res) {
 	var serverList = [];
 
 	// Clean out the old ones.
-	knownServers = knownServers.filter((freshServer) => (freshServer.lastUpdated >= Date.now()));
 	console.log(`We have ${knownServers.length} known servers.`);
+	console.log(knownServers);
 	
+	knownServers = knownServers.filter((freshServer) => (freshServer.lastUpdated >= Date.now()));
+		
 	// Run a loop though the list.
 	knownServers.forEach((knownServer) => {
 		// If we're hiding servers from the same IP, filter them out.
