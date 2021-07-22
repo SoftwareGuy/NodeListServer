@@ -189,14 +189,15 @@ function GetServerList(req, res) {
 			}
 		}
 
-		serverList.push({ 
+		serverList.push(knownServer);
+		/*{ 
 			"ip": knownServer.ip, 
 			"name": knownServer.name, 
 			"port": parseInt(knownServer.port, 10), 
 			"players": parseInt(knownServer.players, 10),
 			"capacity": parseInt(knownServer.capacity, 10),
 			"extras": knownServer.extras
-		});
+		}*/
 	});
 
 	// Temporary holder for the server list we're about to send.
@@ -304,27 +305,9 @@ function AddToServerList(req, res) {
 			"name": (typeof req.body.serverName === "undefined") ? req.body.serverName.trim() : "Untitled Server",
 			"ip": req.ip, 
 			"port": parseInt(req.body.serverPort, 10),
-			"lastUpdated": (Date.now() + (configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000))
+			"data": (typeof req.body.serverExtras !== "undefined") ? req.body.serverExtras.trim() : "",
+			"lastUpdated": (Date.now() + (configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000))			
 		};
-
-		// Extra field santitization
-		if(typeof req.body.serverPlayers === "undefined" || isNaN(req.body.serverPlayers)) {
-			newServer["players"] = 0;
-		} else {
-			newServer["players"] = parseInt(req.body.serverPlayers, 10);
-		}
-
-		if(typeof req.body.serverCapacity === "undefined" || isNaN(req.body.serverCapacity)) {
-			newServer["capacity"] = 0;
-		} else {
-			newServer["capacity"] = parseInt(req.body.serverCapacity, 10);
-		}
-
-		if(typeof req.body.serverExtras !== "undefined") {
-			newServer["extras"] = req.body.serverExtras;
-		} else {
-			newServer["extras"] = "";
-		}
 
 		knownServers.push(newServer);
 
