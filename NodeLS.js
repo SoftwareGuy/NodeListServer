@@ -301,10 +301,8 @@ function AddToServerList(req, res) {
 // RemoveServerFromList: Removes a server from the list.
 function RemoveServerFromList(req, res) {
 	// Doorstopper.
-	if(apiIsKeyFromRequestIsBad(req))
-	{
+	if(CheckAuthKeyFromRequestIsBad(req))
 		return res.sendStatus(400);
-	}
 
 	// Are we using access control? If so, are they allowed to do this?
 	if(configuration.Security.accessControlEnabled && !configuration.Security.allowedAddresses.includes(req.ip)) {
