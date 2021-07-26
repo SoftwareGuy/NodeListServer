@@ -199,10 +199,22 @@ function GetServerList(req, res) {
 	// A client wants the server list. Compile it and send out via JSON.
 	var serverList = [];
 
-	// Clean out the old ones.
-	knownServers = knownServers.filter((freshServer) => (freshServer.lastUpdated >= Date.now()));
+	// Clean out the old ones.	
+	knownServers = knownServers.filter((freshServer) => (freshServer.lastUpdated >= Date.now()));	
+	
+	// Make a copy so we can do filtering.
+	tempServers = knownServers;
+	
+	// If we've got the gameId query string, then we need to also do some magic.
+	if(req.query.gameId !== undefined) {
+		tempServers = tempServers.filter((tempServer) => (tempServer.gameId == req.query.gameId.trim()));
+	} else {
+		tempServers = tempServers.filter((tempServer) => (tempServer.gameId == ""));
+	}
+		
+	
 	// Run a loop though the list.
-	knownServers.forEach((knownServer) => {
+	tempServers.forEach((knownServer) => {
 		// If we're hiding servers from the same IP, filter them out.
 		if(configuration.Clients.dontShowSameIp) {
 			if(knownServer.ip === req.ip) {
@@ -220,8 +232,12 @@ function GetServerList(req, res) {
 		"servers": serverList,
 		"updateFrequency": configuration.Clients.updateFrequency
 	};
-
-	loggerInstance.info(`Replied to '${req.ip}' with known servers.`);
+	
+	if(req.query.gameId !== undefined)
+		loggerInstance.info(`Replied to '${req.ip}' with known servers for game id '${req.query.gameId.trim()}'.`);
+	else
+		loggerInstance.info(`Replied to '${req.ip}' with known servers.`);
+	
 	return res.json(returnedServerList);
 }
 
@@ -240,7 +256,11 @@ function UpdateServerInList(req, res) {
 	serverInQuestion[0].name = (typeof req.body.serverExtras !== "undefined") ? req.body.serverName.trim() : serverInQuestion[0].name;
 	
 	// Only allow important server information changing if configuration allows it.	
-	if(configuration.Security.allowChangingImportantServerDetails) {
+	if(configuration.Security.allowChangingImportantServerDetails) {		
+		// A server shouldn't change it's game id, but well, in case someone wants that functionality...
+		serverInQuestion[0].gameId = (typeof req.body.serverGameId !== "undefined") ? req.body.serverGameId.trim() : "";
+		
+		// IP Address change.
 		serverInQuestion[0].ip = ((typeof req.body.serverIp !== "undefined") ? req.body.serverIp.trim() : serverInQuestion[0].ip);
 		
 		// Port requires some sanity checks.
@@ -307,6 +327,7 @@ function AddToServerList(req, res) {
 	
 	var newServer = { 
 		"uuid": req.body.serverUuid.trim(),
+		"gameId": (typeof req.body.serverGameId !== "undefined") ? req.body.serverGameId.trim() : "",
 		"name": (typeof req.body.serverName !== "undefined") ? req.body.serverName.trim() : "Untitled Server",
 		"ip": req.ip, 
 		"port": parseInt(req.body.serverPort, 10),
