@@ -68,7 +68,7 @@ fs.access(__dirname, fs.constants.W_OK, function(err) {
 });
 
 // Now we get the logger instance.
-var loggerInstance = log4js.getLogger('NodeListServer');
+var loggerInstance = log4js.getLogger('NodeLS');
 
 // ---------------
 // Determine if we've got a configuration file path
