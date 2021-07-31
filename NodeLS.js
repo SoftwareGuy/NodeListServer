@@ -388,13 +388,3 @@ console.log("Report bugs, fork the project and support the developer on GitHub a
 
 expressApp.listen(configuration.Core.listenPort,
  () => console.log(`NodeLS listening on ${configuration.Core.listenPort}.`));
-
-/*
- * Scratchpad - to be removed
-	"uuid": "",
-	"name": "",
-	"ipAddress": "",
-	"port": 0,
-	"gameId": "",
-	"data": ""
-*/
