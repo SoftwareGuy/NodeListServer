@@ -292,7 +292,7 @@ function apiUpdateServerInList(req, res) {
 	knownServers = notTheServerInQuestion;
 
 	loggerInstance.info(`Updated information for '${updatedServer.name}', requested by ${req.ip}`);
-	return res.send("OK\n");
+	return res.send("serverInQuestion.uuid");
 }
 
 // apiAddToServerList: Adds a server to the list.
