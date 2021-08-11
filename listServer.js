@@ -344,7 +344,12 @@ function apiAddToServerList(req, res) {
 		// If there's already a server on this IP or Port then don't add the server to the cache. This will stop duplicates.
 		if(apiDoesThisServerExistByAddressPort(req.ip, req.body.serverPort)) {
 			// Collision - abort!
-			loggerInstance.warn(`Server IP and Port collision check failed for ${req.ip} with UUID '${req.body.serverUuid}'.`);
+			loggerInstance.warn(`Server IP and Port collision check failed for ${req.ip}'.`);
+			return res.sendStatus(400);
+		}
+
+		if(apiDoesServerExistByName(req.body.serverName)) {
+			loggerInstance.warn(`Server name already exists ${req.body.serverName}'.`);
 			return res.sendStatus(400);
 		}
 
