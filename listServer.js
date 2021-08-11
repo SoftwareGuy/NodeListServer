@@ -325,6 +325,12 @@ function apiAddToServerList(req, res) {
 		loggerInstance.warn(`Request from ${req.ip} denied: Port was out of bounds.`);
 		return res.sendStatus(400);
 	}
+
+	
+	if(apiDoesServerExistByName(req.body.serverName)) {
+		loggerInstance.warn(`Server name already exists ${req.body.serverName}'.`);
+		return res.sendStatus(400);
+	}
 	
 	// Add the server to the list.
 	
@@ -343,11 +349,6 @@ function apiAddToServerList(req, res) {
 		if(apiDoesThisServerExistByAddressPort(req.ip, req.body.serverPort)) {
 			// Collision - abort!
 			loggerInstance.warn(`Server IP and Port collision check failed for ${req.ip}'.`);
-			return res.sendStatus(400);
-		}
-
-		if(apiDoesServerExistByName(req.body.serverName)) {
-			loggerInstance.warn(`Server name already exists ${req.body.serverName}'.`);
 			return res.sendStatus(400);
 		}
 
