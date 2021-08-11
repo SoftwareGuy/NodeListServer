@@ -425,6 +425,15 @@ function apiRemoveFromServerList(req, res) {
 	}
 }
 
+async function removeOldServers() {
+	var oldServers = knownServers.filter((freshServer) => (freshServer.lastUpdated <= Date.now()));
+    console.log(oldServers.length);
+    setTimeout(removeOldServers, configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000);
+}
+
+removeOldServers();
+
+
 // -- Start the application -- //
 // Coburn: Moved the actual startup routines here to help boost Codacy's opinion.
 // Callbacks to various functions, leave this alone unless you know what you're doing.
