@@ -387,7 +387,7 @@ function apiAddToServerList(req, res) {
 		knownServers.push(newServer);
 
 		loggerInstance.info(`New server added: '${req.body.serverName}' from ${req.ip}. UUID: '${newUuid}'`);
-		return res.send("OK\n");
+		return res.send(newUuid);
 	}
 }
 
