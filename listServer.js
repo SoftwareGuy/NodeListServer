@@ -26,6 +26,7 @@
 const log4js = require("log4js");
 const iniParser = require("multi-ini");
 const fs = require("fs");
+const uuid = require('uuid');
 
 // ---------------
 // Used to store our configuration file data.
@@ -119,6 +120,17 @@ if(translateConfigOptionToBool(configuration.Auth.useAccessControl)) {
 	allowedServerAddresses = configuration.Auth.allowedIpAddresses.split(",");
 }
 
+function generateUuid() {
+	var generatedUuid = uuid.v4();
+	var doesExist = knownServers.filter((server) => server.uuid === generatedUuid); // Used for collision check
+
+	if(doesExist.length > 0) {
+		generateUuid();
+	}
+
+	return generatedUuid;
+}
+
 // - Authentication
 // apiCheckKey: Checks to see if the client specified key matches.
 function apiCheckKey(clientKey) {
@@ -141,9 +153,20 @@ function apiIsKeyFromRequestIsBad(req) {
 }
 
 // - Sanity Checking
-// apiDoesServerExist: Checks if the server exists in our cache, by UUID.
-function apiDoesServerExist(uuid) {
+// apiDoesServerExistByUuid: Checks if the server exists in our cache, by UUID.
+function apiDoesServerExistByUuid(uuid) {
 	var doesExist = knownServers.filter((server) => server.uuid === uuid);
+	if(doesExist.length > 0) {
+		return true;
+	}
+	
+	// Fall though.
+	return false;
+}
+
+// apiDoesServerExist: Checks if the server exists in our cache, by UUID.
+function apiDoesServerExistByName(name) {
+	var doesExist = knownServers.filter((server) => server.name === name);
 	if(doesExist.length > 0) {
 		return true;
 	}
@@ -199,6 +222,7 @@ function apiGetServerList(req, res) {
 		}
 
 		serverList.push({ 
+			"uuid": knownServer.uuid,
 			"ip": knownServer.ip, 
 			"name": knownServer.name, 
 			"port": parseInt(knownServer.port, 10), 
@@ -294,7 +318,7 @@ function apiAddToServerList(req, res) {
 		return res.sendStatus(400);
 	}
 	
-	if(typeof req.body.serverUuid === "undefined" || typeof req.body.serverName === "undefined" || typeof req.body.serverPort === "undefined") {
+	if(typeof req.body.serverName === "undefined" || typeof req.body.serverPort === "undefined") {
 		loggerInstance.warn(`Request from ${req.ip} denied: UUID, name and/or port is bogus.`);
 		return res.sendStatus(400);
 	}
@@ -308,7 +332,7 @@ function apiAddToServerList(req, res) {
 	
 	/// Checkpoint 1: UUID Collision check
 	// If there's a UUID collision before we add the server then update the matching server.
-	if(apiDoesServerExist(req.body.serverUuid))
+	if(apiDoesServerExistByUuid(req.body.serverUuid))
 	{
 		// Collision - update!
 		loggerInstance.info(`Update server: '${req.body.serverName}' from ${req.ip}. UUID: '${req.body.serverUuid}'`);
@@ -324,9 +348,11 @@ function apiAddToServerList(req, res) {
 			return res.sendStatus(400);
 		}
 
+		var newUuid = generateUuid();
+
 		// We'll get the IP address directly, don't worry about that
 		var newServer = { 
-			"uuid": req.body.serverUuid, 
+			"uuid": newUuid, 
 			"ip": req.ip, 
 			"name": req.body.serverName, 
 			"port": parseInt(req.body.serverPort, 10),
@@ -354,7 +380,7 @@ function apiAddToServerList(req, res) {
 
 		knownServers.push(newServer);
 
-		loggerInstance.info(`New server added: '${req.body.serverName}' from ${req.ip}. UUID: '${req.body.serverUuid}'`);
+		loggerInstance.info(`New server added: '${req.body.serverName}' from ${req.ip}. UUID: '${newUuid}'`);
 		return res.send("OK\n");
 	}
 }
@@ -385,7 +411,7 @@ function apiRemoveFromServerList(req, res) {
 		return res.sendStatus(400);
 	}
 	
-	if(!apiDoesServerExist(req.body.serverUuid, knownServers)) {
+	if(!apiDoesServerExistByUuid(req.body.serverUuid, knownServers)) {
 		loggerInstance.warn(`Request from ${req.ip} denied: Can't delete server with UUID '${req.body.serverUuid}' from cache.`);
 		return res.sendStatus(400);
 	} else {
@@ -402,6 +428,7 @@ expressApp.get("/", denyRequest);
 expressApp.post("/list", apiGetServerList);
 expressApp.post("/add", apiAddToServerList);
 expressApp.post("/remove", apiRemoveFromServerList);
+expressApp.post("/update", apiUpdateServerInList);
 
 // Finally, start the application
 console.log("Welcome to NodeListServer Generation 2 Revision 2");

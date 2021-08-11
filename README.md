@@ -157,16 +157,18 @@ public class NodeListServerListResponse
 [Serializable]
 public class NodeListServerListEntry
 {
+    // The secret key stored on the master server config.ini
+    public string serverKey;
     // IP address. Beware: Might be IPv6 format, and require you to chop off the leading "::ffff:" part. YMMV.
     public string ip;
     // Name of the server.
-    public string name;
+    public string serverName;
     // Port of the server.
-    public int port;
+    public int serverPort;
     // Number of players on the server.
-    public int players;
+    public int serverPlayers;
     // The number of players maximum allowed on the server.
-    public int capacity;
+    public int serverCapacity;
     // Extra data.
     public string extras;
 }
