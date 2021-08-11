@@ -248,28 +248,26 @@ function apiUpdateServerInList(req, res) {
 
 	// TODO: Improve this. This feels ugly hack tier and I feel it could be more elegant.
 	// If anyone has a PR to improves this, please send me a PR.
-	var serverInQuestion = knownServers.filter((server) => (server.uuid === req.body.serverUuid));
+	var serverInQuestion = knownServers.filter((server) => (server.uuid === req.body.serverUuid))[0];
 	var notTheServerInQuestion = knownServers.filter((server) => (server.uuid !== req.body.serverUuid));
 
-	// I hate it when we get arrays back from that filter function...
-	// Pretty sure this could be improved. PR welcome.
 	var updatedServer = [];
-	updatedServer["uuid"] = serverInQuestion[0].uuid;
-	updatedServer["ip"] = serverInQuestion[0].ip;
+	updatedServer["uuid"] = serverInQuestion.uuid;
+	updatedServer["ip"] = serverInQuestion.ip;
 	
-	updatedServer["port"] = serverInQuestion[0].port;
-	updatedServer["capacity"] = serverInQuestion[0].capacity;
+	updatedServer["port"] = serverInQuestion.port;
+	updatedServer["capacity"] = serverInQuestion.capacity;
 
 	if(typeof req.body.serverExtras !== "undefined") {
 		updatedServer["extras"] = req.body.serverExtras.trim();
 	} else {
-		updatedServer["extras"] = serverInQuestion[0].extras;
+		updatedServer["extras"] = serverInQuestion.extras;
 	}
 
 	if(typeof req.body.serverName !== "undefined") {
 		updatedServer["name"] = req.body.serverName.trim();
 	} else {
-		updatedServer["name"] = serverInQuestion[0].name;
+		updatedServer["name"] = serverInQuestion.name;
 	}
 
 	if(typeof req.body.serverPlayers !== "undefined") {
@@ -279,7 +277,7 @@ function apiUpdateServerInList(req, res) {
 			updatedServer["players"] = parseInt(req.body.serverPlayers, 10);
 		}
 	} else {
-		updatedServer["players"] = serverInQuestion[0].players;
+		updatedServer["players"] = serverInQuestion.players;
 	}
 	
 	// Server capacity might have changed, let's update that if needed
@@ -433,7 +431,6 @@ expressApp.get("/", denyRequest);
 expressApp.post("/list", apiGetServerList);
 expressApp.post("/add", apiAddToServerList);
 expressApp.post("/remove", apiRemoveFromServerList);
-expressApp.post("/update", apiUpdateServerInList);
 
 // Finally, start the application
 console.log("Welcome to NodeListServer Generation 2 Revision 2");
