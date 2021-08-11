@@ -429,7 +429,7 @@ function apiRemoveFromServerList(req, res) {
 
 // Automatically remove servers when they haven't updated after the time specified in the config.ini
 async function removeOldServers() {
-	var oldServers = knownServers.filter((freshServer) => (freshServer.lastUpdated <= Date.now()));
+	knownServers = knownServers.filter((freshServer) => (freshServer.lastUpdated >= Date.now()));
     setTimeout(removeOldServers, configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000);
 }
 
