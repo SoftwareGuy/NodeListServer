@@ -157,9 +157,9 @@ public class NodeListServerListResponse
 [Serializable]
 public class NodeListServerListEntry
 {
-    // The secret key on the master server config
+  // The secret key on the master server config
 	public string serverKey; 
-    // Random generated UUID
+  // Random generated UUID
 	public string serverUuid; 
 	// IP address. Beware: Might be IPv6 format, and require you to chop off the leading "::ffff:" part. YMMV.
 	public string ip;
@@ -174,17 +174,16 @@ public class NodeListServerListEntry
 	// Extra data.
 	public string extras;
 }
-    
 ```
 
 Make sure you POST the correct data when you want to add/remove servers. See API Endpoints for more details on the required POST fields.
 
 ## Credits
 
--   vis2k: Mirror Networking and the original List Server
+- vis2k: Mirror Networking and the original List Server
 -	JesusLuvsYooh: That other blacksmith that's forging NodeLS into shape and always annoying me with questions
 -	AnthonyE: First actual deployment of NodeLS in production!
--   Mirror Team & Discord Members
+- Mirror Team & Discord Members
 
 
 ***Thank you for choosing Australian Open Source Software.***
