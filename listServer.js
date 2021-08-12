@@ -1,9 +1,8 @@
 /* eslint no-console: ["error", { allow: ["log", "warn", "error"] }] */
-// NodeListServer: NodeJS List Server (Re-)implementation of Mirror List Server
+// NodeListServer: NodeJS-based List Server Application
 // Developed by Matt Coburn and project contributors.
 // --------------
-// This software is licensed under the MIT License
-// Copyright (c) 2019 - 2020 Matt Coburn
+// This software is MIT Licensed. Copyright (c) 2019 - 2021 Matt Coburn.
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
