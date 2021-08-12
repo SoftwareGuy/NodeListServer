@@ -26,6 +26,7 @@
 const log4js = require("log4js");
 const iniParser = require("multi-ini");
 const fs = require("fs");
+const uuid = require('uuid');
 
 // ---------------
 // Used to store our configuration file data.
@@ -119,6 +120,17 @@ if(translateConfigOptionToBool(configuration.Auth.useAccessControl)) {
 	allowedServerAddresses = configuration.Auth.allowedIpAddresses.split(",");
 }
 
+function generateUuid() {
+	var generatedUuid = uuid.v4();
+	var doesExist = knownServers.filter((server) => server.uuid === generatedUuid); // Used for collision check
+
+	if(doesExist.length > 0) {
+		generateUuid();
+	}
+
+	return generatedUuid;
+}
+
 // - Authentication
 // apiCheckKey: Checks to see if the client specified key matches.
 function apiCheckKey(clientKey) {
@@ -141,9 +153,20 @@ function apiIsKeyFromRequestIsBad(req) {
 }
 
 // - Sanity Checking
-// apiDoesServerExist: Checks if the server exists in our cache, by UUID.
-function apiDoesServerExist(uuid) {
+// apiDoesServerExistByUuid: Checks if the server exists in our cache, by UUID.
+function apiDoesServerExistByUuid(uuid) {
 	var doesExist = knownServers.filter((server) => server.uuid === uuid);
+	if(doesExist.length > 0) {
+		return true;
+	}
+	
+	// Fall though.
+	return false;
+}
+
+// apiDoesServerExist: Checks if the server exists in our cache, by UUID.
+function apiDoesServerExistByName(name) {
+	var doesExist = knownServers.filter((server) => server.name === name);
 	if(doesExist.length > 0) {
 		return true;
 	}
@@ -199,6 +222,7 @@ function apiGetServerList(req, res) {
 		}
 
 		serverList.push({ 
+			"uuid": knownServer.uuid,
 			"ip": knownServer.ip, 
 			"name": knownServer.name, 
 			"port": parseInt(knownServer.port, 10), 
@@ -224,28 +248,26 @@ function apiUpdateServerInList(req, res) {
 
 	// TODO: Improve this. This feels ugly hack tier and I feel it could be more elegant.
 	// If anyone has a PR to improves this, please send me a PR.
-	var serverInQuestion = knownServers.filter((server) => (server.uuid === req.body.serverUuid));
+	var serverInQuestion = knownServers.filter((server) => (server.uuid === req.body.serverUuid))[0];
 	var notTheServerInQuestion = knownServers.filter((server) => (server.uuid !== req.body.serverUuid));
 
-	// I hate it when we get arrays back from that filter function...
-	// Pretty sure this could be improved. PR welcome.
 	var updatedServer = [];
-	updatedServer["uuid"] = serverInQuestion[0].uuid;
-	updatedServer["ip"] = serverInQuestion[0].ip;
+	updatedServer["uuid"] = serverInQuestion.uuid;
+	updatedServer["ip"] = serverInQuestion.ip;
 	
-	updatedServer["port"] = serverInQuestion[0].port;
-	updatedServer["capacity"] = serverInQuestion[0].capacity;
+	updatedServer["port"] = serverInQuestion.port;
+	updatedServer["capacity"] = serverInQuestion.capacity;
 
 	if(typeof req.body.serverExtras !== "undefined") {
 		updatedServer["extras"] = req.body.serverExtras.trim();
 	} else {
-		updatedServer["extras"] = serverInQuestion[0].extras;
+		updatedServer["extras"] = serverInQuestion.extras;
 	}
 
 	if(typeof req.body.serverName !== "undefined") {
 		updatedServer["name"] = req.body.serverName.trim();
 	} else {
-		updatedServer["name"] = serverInQuestion[0].name;
+		updatedServer["name"] = serverInQuestion.name;
 	}
 
 	if(typeof req.body.serverPlayers !== "undefined") {
@@ -255,7 +277,7 @@ function apiUpdateServerInList(req, res) {
 			updatedServer["players"] = parseInt(req.body.serverPlayers, 10);
 		}
 	} else {
-		updatedServer["players"] = serverInQuestion[0].players;
+		updatedServer["players"] = serverInQuestion.players;
 	}
 	
 	// Server capacity might have changed, let's update that if needed
@@ -294,7 +316,7 @@ function apiAddToServerList(req, res) {
 		return res.sendStatus(400);
 	}
 	
-	if(typeof req.body.serverUuid === "undefined" || typeof req.body.serverName === "undefined" || typeof req.body.serverPort === "undefined") {
+	if(typeof req.body.serverName === "undefined" || typeof req.body.serverPort === "undefined") {
 		loggerInstance.warn(`Request from ${req.ip} denied: UUID, name and/or port is bogus.`);
 		return res.sendStatus(400);
 	}
@@ -303,12 +325,15 @@ function apiAddToServerList(req, res) {
 		loggerInstance.warn(`Request from ${req.ip} denied: Port was out of bounds.`);
 		return res.sendStatus(400);
 	}
+
+	
+
 	
 	// Add the server to the list.
 	
 	/// Checkpoint 1: UUID Collision check
 	// If there's a UUID collision before we add the server then update the matching server.
-	if(apiDoesServerExist(req.body.serverUuid))
+	if(apiDoesServerExistByUuid(req.body.serverUuid))
 	{
 		// Collision - update!
 		loggerInstance.info(`Update server: '${req.body.serverName}' from ${req.ip}. UUID: '${req.body.serverUuid}'`);
@@ -316,17 +341,24 @@ function apiAddToServerList(req, res) {
 	}
 	else
 	{
+		if(apiDoesServerExistByName(req.body.serverName)) {
+			loggerInstance.warn(`Server name already exists ${req.body.serverName}'.`);
+			return res.sendStatus(400);
+		}
+		
 		// Checkpoint 2: IP and Port collision check
 		// If there's already a server on this IP or Port then don't add the server to the cache. This will stop duplicates.
 		if(apiDoesThisServerExistByAddressPort(req.ip, req.body.serverPort)) {
 			// Collision - abort!
-			loggerInstance.warn(`Server IP and Port collision check failed for ${req.ip} with UUID '${req.body.serverUuid}'.`);
+			loggerInstance.warn(`Server IP and Port collision check failed for ${req.ip}'.`);
 			return res.sendStatus(400);
 		}
 
+		var newUuid = generateUuid();
+
 		// We'll get the IP address directly, don't worry about that
 		var newServer = { 
-			"uuid": req.body.serverUuid, 
+			"uuid": newUuid, 
 			"ip": req.ip, 
 			"name": req.body.serverName, 
 			"port": parseInt(req.body.serverPort, 10),
@@ -354,8 +386,8 @@ function apiAddToServerList(req, res) {
 
 		knownServers.push(newServer);
 
-		loggerInstance.info(`New server added: '${req.body.serverName}' from ${req.ip}. UUID: '${req.body.serverUuid}'`);
-		return res.send("OK\n");
+		loggerInstance.info(`New server added: '${req.body.serverName}' from ${req.ip}. UUID: '${newUuid}'`);
+		return res.send(newUuid);
 	}
 }
 
@@ -385,7 +417,7 @@ function apiRemoveFromServerList(req, res) {
 		return res.sendStatus(400);
 	}
 	
-	if(!apiDoesServerExist(req.body.serverUuid, knownServers)) {
+	if(!apiDoesServerExistByUuid(req.body.serverUuid, knownServers)) {
 		loggerInstance.warn(`Request from ${req.ip} denied: Can't delete server with UUID '${req.body.serverUuid}' from cache.`);
 		return res.sendStatus(400);
 	} else {
@@ -394,6 +426,15 @@ function apiRemoveFromServerList(req, res) {
 		return res.send("OK\n");
 	}
 }
+
+// Automatically remove servers when they haven't updated after the time specified in the config.ini
+async function removeOldServers() {
+	knownServers = knownServers.filter((freshServer) => (freshServer.lastUpdated >= Date.now()));
+    setTimeout(removeOldServers, configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000);
+}
+
+removeOldServers();
+
 
 // -- Start the application -- //
 // Coburn: Moved the actual startup routines here to help boost Codacy's opinion.
