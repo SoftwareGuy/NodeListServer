@@ -157,32 +157,33 @@ public class NodeListServerListResponse
 [Serializable]
 public class NodeListServerListEntry
 {
-    // The secret key stored on the master server config.ini
-    public string serverKey;
-    // IP address. Beware: Might be IPv6 format, and require you to chop off the leading "::ffff:" part. YMMV.
-    public string ip;
-    // Name of the server.
-    public string serverName;
-    // Port of the server.
-    public int serverPort;
-    // Number of players on the server.
-    public int serverPlayers;
-    // The number of players maximum allowed on the server.
-    public int serverCapacity;
-    // Extra data.
-    public string extras;
+  // The secret key on the master server config
+	public string serverKey; 
+  // Random generated UUID
+	public string serverUuid; 
+	// IP address. Beware: Might be IPv6 format, and require you to chop off the leading "::ffff:" part. YMMV.
+	public string ip;
+	// Name of the server.
+	public string serverName;
+	// Port of the server.
+	public int serverPort;
+	// Number of players on the server.
+	public int serverPlayers;
+	// The number of players maximum allowed on the server.
+	public int serverCapacity;
+	// Extra data.
+	public string extras;
 }
-    
 ```
 
 Make sure you POST the correct data when you want to add/remove servers. See API Endpoints for more details on the required POST fields.
 
 ## Credits
 
--   vis2k: Mirror Networking and the original List Server
+- vis2k: Mirror Networking and the original List Server
 -	JesusLuvsYooh: That other blacksmith that's forging NodeLS into shape and always annoying me with questions
 -	AnthonyE: First actual deployment of NodeLS in production!
--   Mirror Team & Discord Members
+- Mirror Team & Discord Members
 
 
 ***Thank you for choosing Australian Open Source Software.***
