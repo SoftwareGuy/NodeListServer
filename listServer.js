@@ -221,7 +221,6 @@ function apiGetServerList(req, res) {
 		}
 
 		serverList.push({ 
-			"uuid": knownServer.uuid,
 			"ip": knownServer.ip, 
 			"name": knownServer.name, 
 			"port": parseInt(knownServer.port, 10), 
