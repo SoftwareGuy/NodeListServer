@@ -318,13 +318,7 @@ function AddToServerList(req, res) {
 		loggerInstance.warn(`Denied add request from ${req.ip}. Missing request data.`);
 		return res.sendStatus(400);
 	}
-	
-	// Check if the UUID is null (must have one)
-	if(typeof req.body.serverUuid === "undefined") {
-		loggerInstance.warn(`Denied add request from ${req.ip}. Server UUID was not specified.`);		
-		return res.sendStatus(400);
-	}
-	
+		
 	// Check if our port is null, not a number or out of range
 	if(typeof req.body.serverPort === "undefined" || isNaN(req.body.serverPort) || req.body.serverPort < 0 || req.body.serverPort > 65535) {
 		loggerInstance.warn(`Denied add request from ${req.ip}. Port is null or out of bounds.`);
