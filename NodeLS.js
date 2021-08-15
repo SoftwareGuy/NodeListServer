@@ -408,7 +408,7 @@ async function RemoveOldServers() {
     // setTimeout uses milliseconds, so we need to set it to the correct value.
 	// inactiveServerTimeout is treated as minutes, so we need to multiply it by 60 to get seconds, then
 	// convert that to milliseconds by multiplying it by 1000.
-	setTimeout(removeOldServers, configuration.Pruning.inactiveServerTimeout * 60 * 1000);
+	setTimeout(RemoveOldServers, configuration.Pruning.inactiveServerTimeout * 60 * 1000);
 }
 
 // Define routes to various functions, leave this alone unless you know what you're doing.
