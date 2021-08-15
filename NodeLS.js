@@ -242,7 +242,7 @@ function GetServerList(req, res) {
 		var entry = { 
 			"gameId": knownServer.gameId,
 			"name": knownServer.name,
-			"ip": knownServer.ip
+			"ip": knownServer.ip,
 			"port": knownServer.port,
 			"data": knownServer.data
 		};
