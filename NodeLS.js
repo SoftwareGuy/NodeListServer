@@ -267,16 +267,28 @@ function GetServerList(req, res) {
 
 // UpdateServerInList: Updates a server in the list.
 function UpdateServerInList(req, res) {
+	
+	if(typeof req.body.serverUuid === "undefined") {
+			loggerInstance.warn("We can't update a server record without knowing the servers' UUID...");
+			return res.sendStatus(400);	
+	}
+	
 	// TODO: Improve this. This feels ugly hack tier and I feel it could be more elegant.
 	// If anyone has a PR to improves this, please send me a PR.
 	var serverInQuestion = knownServers.filter((server) => (server.uuid === req.body.serverUuid.trim()));
+	
+	if(serverInQuestion === null) {
+		loggerInstance.warn("No such server");
+		return;
+	}
+	
 	var otherServers = knownServers.filter((server) => (server.uuid !== req.body.serverUuid));
 	
 	// Do not update the UUID. That cannot be changed.
 	serverInQuestion[0].name = (typeof req.body.serverExtras !== "undefined") ? req.body.serverName.trim() : serverInQuestion[0].name;
 	
 	// Only allow important server information changing if configuration allows it.	
-	if(configuration.Security.allowChangingImportantServerDetails) {		
+	if(configuration.Security.allowChangingImportantServerDetails) {
 		// A server shouldn't change it's game id, but well, in case someone wants that functionality...
 		serverInQuestion[0].gameId = (typeof req.body.serverGameId !== "undefined") ? req.body.serverGameId.trim() : "";
 		
