@@ -277,7 +277,7 @@ function UpdateServerInList(req, res) {
 	// If anyone has a PR to improves this, please send me a PR.
 	var serverInQuestion = knownServers.filter((server) => (server.uuid === req.body.serverUuid.trim()));
 	
-	if(typeof serverInQuestion === "undefined") {
+	if(serverInQuestion.length != 1) {
 		loggerInstance.warn("No such server or internal confusion when trying to update a server record.");
 		return res.sendStatus(400);
 	}
@@ -306,7 +306,7 @@ function UpdateServerInList(req, res) {
 	// Push the server back onto the stack.
 	otherServers.push(serverInQuestion);
 
-	loggerInstance.info(`Updated server '${serverInQuestion[0].uuid}' ('${serverInQuestion[0].name}') which was requested by ${req.ip}.`);
+	loggerInstance.info(`Server '${serverInQuestion[0].name}' (${serverInQuestion[0].uuid}) record updated; requested by ${req.ip}.`);
 	return res.sendStatus(200);
 }
 
