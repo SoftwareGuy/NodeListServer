@@ -267,7 +267,6 @@ function GetServerList(req, res) {
 
 // UpdateServerInList: Updates a server in the list.
 function UpdateServerInList(req, res) {
-
 	// TODO: Improve this. This feels ugly hack tier and I feel it could be more elegant.
 	// If anyone has a PR to improves this, please send me a PR.
 	var serverInQuestion = knownServers.filter((server) => (server.uuid === req.body.serverUuid.trim()));
@@ -318,7 +317,15 @@ function AddToServerList(req, res) {
 		loggerInstance.warn(`Denied add request from ${req.ip}. Missing request data.`);
 		return res.sendStatus(400);
 	}
-		
+
+	// Check if we're sending a UUID to this endpoint, which is no longer supported. 
+	//Use the /update endpoint instead.
+	if(typeof req.body.serverUuid !== "undefined") {
+			loggerInstance.warn("A server client is using the wrong endpoint to update their server record. Please use the correct endpoint - refer to the documentation.");
+			return res.sendStatus(400);	
+	}
+	
+	
 	// Check if our port is null, not a number or out of range
 	if(typeof req.body.serverPort === "undefined" || isNaN(req.body.serverPort) || req.body.serverPort < 0 || req.body.serverPort > 65535) {
 		loggerInstance.warn(`Denied add request from ${req.ip}. Port is null or out of bounds.`);
@@ -328,17 +335,9 @@ function AddToServerList(req, res) {
 	// If there's a UUID collision before we add the server then update the matching server.
 	if(CheckDoesServerAlreadyExist(req.body.serverName))
 	{
-		// Collision - update!
-		loggerInstance.info(`Server already known to us; updating server '${req.body.serverName}'.`);
-		
-		if(typeof req.body.serverUuid !== undefined) {
-			UpdateServerInList(req, res);
-		} else {
-			loggerInstance.warn("Server already known to us by name, but no UUID specified to update. This is not allowed and could indictate a malicious attack.");
-			return res.sendStatus(400);	
-		}
-		
-		return;
+		// Collision - abort!
+		loggerInstance.warn("A server is already known with the name is using the wrong endpoint to update their server record. Please use the correct endpoint - refer to the documentation.");
+		return res.sendStatus(400);
 	}
 
 	if(CheckExistingServerCollision(req.ip, req.body.serverPort)) {
@@ -417,6 +416,7 @@ expressApp.get("/", GetServerList);
 expressApp.get("/list", GetServerList);
 expressApp.post("/add", AddToServerList);
 expressApp.post("/delete", RemoveServerFromList);
+expressApp.post("/update", UpdateServerInList);
 
 // Finally, start the application
 console.log("NodeLS: Node List Server Generation 3 (Development Version)");
