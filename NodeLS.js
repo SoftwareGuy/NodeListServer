@@ -25,6 +25,7 @@
 // ---------------
 const log4js = require("log4js");
 const fs = require("fs");
+const uuid = require('uuid');
 
 // ---------------
 // Used to store our configuration file data.
@@ -32,6 +33,7 @@ const fs = require("fs");
 var configuration;
 var configFile = "./config.json";
 var logFile = "NodeListServer.log";
+
 // ---------------
 // Logging configuration. Feel free to modify.
 // ---------------
@@ -142,6 +144,18 @@ expressApp.use(bodyParser.urlencoded({ extended: true }));
 // Server array cache.
 var knownServers = [];
 
+// UUID Generation
+function generateUuid() {
+	var generatedUuid = uuid.v4();
+	var doesExist = knownServers.filter((server) => server.uuid === generatedUuid); // Used for collision check
+
+	if(doesExist.length > 0) {
+		generateUuid();
+	}
+
+	return generatedUuid;
+}
+
 // - Authentication
 // CheckAuthKey: Checks to see if the client specified key matches.
 function CheckAuthKey(clientKey) {
@@ -164,9 +178,9 @@ function CheckAuthKeyFromRequestIsBad(req) {
 }
 
 // - Sanity Checking
-// CheckDoesServerAlreadyExist: Checks if the server exists in our cache, by UUID.
-function CheckDoesServerAlreadyExist(uuid) {
-	var doesExist = knownServers.filter((server) => server.uuid === uuid);
+// CheckDoesServerAlreadyExist: Checks if the server exists in our cache, by name.
+function CheckDoesServerAlreadyExist(name) {
+	var doesExist = knownServers.filter((server) => server.name === name);
 	if(doesExist.length > 0) {
 		return true;
 	}
@@ -222,8 +236,18 @@ function GetServerList(req, res) {
 				return;
 			}
 		}
+		
+		// Make a cache entry here, since we need to take out some data to prevent unwanted third-party malicious
+		// behaviour.
+		var entry = { 
+			"gameId": knownServer.gameId,
+			"name": knownServer.name,
+			"ip": knownServer.ip
+			"port": knownServer.port,
+			"data": knownServer.data
+		};
 
-		serverList.push(knownServer);
+		serverList.push(entry);
 	});
 
 	// Temporary holder for the server list we're about to send.
@@ -248,9 +272,6 @@ function UpdateServerInList(req, res) {
 	// If anyone has a PR to improves this, please send me a PR.
 	var serverInQuestion = knownServers.filter((server) => (server.uuid === req.body.serverUuid.trim()));
 	var otherServers = knownServers.filter((server) => (server.uuid !== req.body.serverUuid));
-
-	// Holy shit I totally am not doing inline if statements back to back
-	// What the heck am I doing, it's a back to back if-spin double!
 	
 	// Do not update the UUID. That cannot be changed.
 	serverInQuestion[0].name = (typeof req.body.serverExtras !== "undefined") ? req.body.serverName.trim() : serverInQuestion[0].name;
@@ -321,15 +342,17 @@ function AddToServerList(req, res) {
 
 	if(CheckExistingServerCollision(req.ip, req.body.serverPort)) {
 		// Collision - abort!
-		loggerInstance.warn(`Denied add request from ${req.ip}. Server IP/Port collision.`);
+		loggerInstance.warn(`Server IP/Port collision; Denying add request from ${req.ip}. `);
 		return res.sendStatus(400);
 	}
 	
+	var generatedUuid = generateUuid();
+	
 	var newServer = { 
-		"uuid": req.body.serverUuid.trim(),
+		"uuid": generatedUuid,
 		"gameId": (typeof req.body.serverGameId !== "undefined") ? req.body.serverGameId.trim() : "",
+		"ip": ((typeof req.body.serverIp !== "undefined") ? req.body.serverIp.trim() : req.ip), 
 		"name": (typeof req.body.serverName !== "undefined") ? req.body.serverName.trim() : "Untitled Server",
-		"ip": req.ip, 
 		"port": parseInt(req.body.serverPort, 10),
 		"data": (typeof req.body.serverData !== "undefined") ? req.body.serverData.trim() : "",
 		"lastUpdated": (Date.now() + (configuration.Pruning.inactiveServerTimeout * 60 * 1000))
@@ -338,8 +361,10 @@ function AddToServerList(req, res) {
 	// Add the server to the list.
 	knownServers.push(newServer);
 
-	loggerInstance.info(`Registered server '${newServer.uuid}' ('${newServer.name}') from ${req.ip} in cache.`);
-	return res.sendStatus(200);	
+	loggerInstance.info(`Registered '${newServer.name}' with UUID '${newServer.uuid}' (${newServer.ip}:${newServer.port}) in cache.`);
+	
+	// Return the generated UUID, the server client will cache it.
+	return res.send(generatedUuid);	
 }
 
 // RemoveServerFromList: Removes a server from the list.
@@ -367,13 +392,23 @@ function RemoveServerFromList(req, res) {
 	}
 	
 	if(!CheckDoesServerAlreadyExist(req.body.serverUuid, knownServers)) {
-		loggerInstance.warn(`Denied delete request from ${req.ip}: No such server known - ${req.body.serverUuid}`);
+		loggerInstance.warn(`Delete request from ${req.ip} denied: No such server with ID '${req.body.serverUuid}'`);
 		return res.sendStatus(400);
 	} else {
 		knownServers = knownServers.filter((server) => server.uuid !== req.body.serverUuid);
 		loggerInstance.info(`Deleted server '${req.body.serverUuid}' from cache (requested by ${req.ip}).`);
 		return res.sendStatus(200);
 	}
+}
+
+// Automatically remove servers when they haven't updated after the time specified in the config.ini
+async function RemoveOldServers() {
+	knownServers = knownServers.filter((freshServer) => (freshServer.lastUpdated >= Date.now()));
+	
+    // setTimeout uses milliseconds, so we need to set it to the correct value.
+	// inactiveServerTimeout is treated as minutes, so we need to multiply it by 60 to get seconds, then
+	// convert that to milliseconds by multiplying it by 1000.
+	setTimeout(removeOldServers, configuration.Pruning.inactiveServerTimeout * 60 * 1000);
 }
 
 // Define routes to various functions, leave this alone unless you know what you're doing.
@@ -386,5 +421,11 @@ expressApp.post("/delete", RemoveServerFromList);
 console.log("NodeLS: Node List Server Generation 3 (Development Version)");
 console.log("Report bugs, fork the project and support the developer on GitHub at https://github.com/SoftwareGuy/NodeListServer");
 
+if(configuration.Pruning.enabled == true) {
+	console.log(`NodeLS auto-pruning is enabled and will run every ${configuration.Pruning.inactiveServerTimeout} minutes.`);
+	console.log("If you do not wish NodeLS to auto-prune and you know what you're doing, then disable it via the configuration file.");
+	RemoveOldServers();
+}
+
 expressApp.listen(configuration.Core.listenPort,
- () => console.log(`NodeLS listening on ${configuration.Core.listenPort}.`));
+	() => console.log(`NodeLS is listening on ${configuration.Core.listenPort}.`));
