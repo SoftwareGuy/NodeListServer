@@ -331,12 +331,13 @@ function AddToServerList(req, res) {
 		// Collision - update!
 		loggerInstance.info(`Server already known to us; updating server '${req.body.serverName}'.`);
 		
-		if(typeof req.body.serverUuid === undefined) {
+		if(typeof req.body.serverUuid !== undefined) {
+			UpdateServerInList(req, res);
+		} else {
 			loggerInstance.warn("Server already known to us by name, but no UUID specified to update. This is not allowed and could indictate a malicious attack.");
-			return res.sendStatus(400);
+			return res.sendStatus(400);	
 		}
-			
-		UpdateServerInList(req, res);
+		
 		return;
 	}
 
