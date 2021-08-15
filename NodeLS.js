@@ -285,7 +285,7 @@ function UpdateServerInList(req, res) {
 	var otherServers = knownServers.filter((server) => (server.uuid !== req.body.serverUuid));
 	
 	// Do not update the UUID. That cannot be changed.
-	serverInQuestion[0].name = (typeof req.body.serverExtras !== "undefined") ? req.body.serverName.trim() : serverInQuestion[0].name;
+	serverInQuestion[0].name = (typeof req.body.serverName !== "undefined") ? req.body.serverName.trim() : serverInQuestion[0].name;
 	
 	// Only allow important server information changing if configuration allows it.	
 	if(configuration.Security.allowChangingImportantServerDetails) {
