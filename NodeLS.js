@@ -326,10 +326,16 @@ function AddToServerList(req, res) {
 	}
 	
 	// If there's a UUID collision before we add the server then update the matching server.
-	if(CheckDoesServerAlreadyExist(req.body.serverName.trim()))
+	if(CheckDoesServerAlreadyExist(req.body.serverName))
 	{
 		// Collision - update!
 		loggerInstance.info(`Server already known to us; updating server '${req.body.serverName}'.`);
+		
+		if(typeof req.body.serverUuid === undefined) {
+			loggerInstance.warn("Server already known to us by name, but no UUID specified to update. This is not allowed and could indictate a malicious attack.");
+			return res.sendStatus(400);
+		}
+			
 		UpdateServerInList(req, res);
 		return;
 	}
