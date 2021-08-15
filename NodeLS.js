@@ -300,7 +300,7 @@ function UpdateServerInList(req, res) {
 		serverInQuestion[0].port = (typeof newPort !== "undefined" && !isNaN(newPort) && newPort < 0 && newPort > 65535) ? newPort : serverInQuestion[0].port;
 	}
 	
-	serverInQuestion[0].data = (req.body.serverData !== "undefined") ? req.body.serverData.trim() : serverInQuestion[0].data;
+	serverInQuestion[0].data = (typeof req.body.serverData !== "undefined") ? req.body.serverData.trim() : serverInQuestion[0].data;
 	serverInQuestion[0].lastUpdated = Date.now() + (configuration.Pruning.inactiveServerTimeout * 60 * 1000);
 	
 	// Push the server back onto the stack.
