@@ -277,9 +277,9 @@ function UpdateServerInList(req, res) {
 	// If anyone has a PR to improves this, please send me a PR.
 	var serverInQuestion = knownServers.filter((server) => (server.uuid === req.body.serverUuid.trim()));
 	
-	if(serverInQuestion === null) {
-		loggerInstance.warn("No such server");
-		return;
+	if(typeof serverInQuestion === "undefined") {
+		loggerInstance.warn("No such server or internal confusion when trying to update a server record.");
+		return res.sendStatus(400);
 	}
 	
 	var otherServers = knownServers.filter((server) => (server.uuid !== req.body.serverUuid));
@@ -348,7 +348,7 @@ function AddToServerList(req, res) {
 	if(CheckDoesServerAlreadyExist(req.body.serverName))
 	{
 		// Collision - abort!
-		loggerInstance.warn("A server is already known with the name is using the wrong endpoint to update their server record. Please use the correct endpoint - refer to the documentation.");
+		loggerInstance.warn("A server already known is using the wrong endpoint to update their server record. Please use the correct endpoint - refer to the documentation.");
 		return res.sendStatus(400);
 	}
 
