@@ -358,7 +358,7 @@ function apiAddToServerList(req, res) {
 		// We'll get the IP address directly, don't worry about that
 		var newServer = { 
 			"uuid": newUuid, 
-			"ip": req.ip, 
+			"ip": req.body.ip, 
 			"name": req.body.serverName, 
 			"port": parseInt(req.body.serverPort, 10),
 			"lastUpdated": (Date.now() + (configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000))
