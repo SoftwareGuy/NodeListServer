@@ -43,30 +43,30 @@ var logFile = "NodeListServer.log";
 
 // Check if we can write?
 fs.access(__dirname, fs.constants.W_OK, function(err) {
-  if(err){
-	console.warn("Can't write to disk; logging to file will be disabled!");
-	
-	// Configure Log4js
-	log4js.configure({
-	  appenders: {
-		'console': { type: 'stdout' },
-		default: { type: 'stdout' }
-	  },
-	  categories: {
-		default: { appenders: ['console'], level: 'debug' }
-	  }
-	});
-  } else {
-	log4js.configure({
-		appenders: {
-			'console': { type: 'stdout' },
-			default: { type: 'file', filename: logFile, maxLogSize: 1048576, backups: 3, compress: true }
-		},
-		categories: {
-			default: { appenders: ['default', 'console'], level: 'debug' }
-		}
-	});
-  }
+	if(err){
+		console.warn("Can't write to disk; logging to file will be disabled!");
+		
+		// Configure Log4js
+		log4js.configure({
+			appenders: {
+				'console': { type: 'stdout' },
+				default: { type: 'stdout' }
+			},
+			categories: {
+				default: { appenders: ['console'], level: 'debug' }
+			}
+		});
+	} else {
+		log4js.configure({
+			appenders: {
+				'console': { type: 'stdout' },
+				default: { type: 'file', filename: logFile, maxLogSize: 1048576, backups: 3, compress: true }
+			},
+			categories: {
+				default: { appenders: ['default', 'console'], level: 'debug' }
+			}
+		});
+	}
 });
 
 // Now we get the logger instance.
@@ -96,6 +96,7 @@ if (fs.existsSync(configFile)) {
 		process.exit(1);
 	}
 } else {
+	console.error("NodeLS Startup Failure");
 	loggerInstance.error("NodeListServer failed to start due to a missing configuration file.");
 	loggerInstance.error("Please ensure 'config.json' exists in the directory next to the script file.");
 	loggerInstance.error("If you see this message repeatedly, ask for help at https://github.com/SoftwareGuy/NodeListServer.");
@@ -131,8 +132,8 @@ if(configuration.Security.rateLimiter) {
 	const expressRateLimiter = require("express-rate-limit");
 	
 	const limiter = expressRateLimiter({
-	  windowMs: configuration.Security.rateLimiterWindow * 60 * 1000, 	
-	  max: configuration.Security.rateLimiterMaxRequests
+		windowMs: configuration.Security.rateLimiterWindow * 60 * 1000, 	
+		max: configuration.Security.rateLimiterMaxRequests
 	});
 
 	expressApp.use(limiter);
@@ -144,11 +145,12 @@ expressApp.use(bodyParser.urlencoded({ extended: true }));
 // Server array cache.
 var knownServers = [];
 
-// UUID Generation
+// -- UUID Generation
 function generateUuid() {
 	var generatedUuid = uuid.v4();
 	var doesExist = knownServers.filter((server) => server.uuid === generatedUuid); // Used for collision check
 
+	// Loop to ensure that UUID is unique.
 	if(doesExist.length > 0) {
 		generateUuid();
 	}
@@ -156,7 +158,7 @@ function generateUuid() {
 	return generatedUuid;
 }
 
-// - Authentication
+// -- Authentication
 // CheckAuthKey: Checks to see if the client specified key matches.
 function CheckAuthKey(clientKey) {
 	if(clientKey === configuration.Security.communicationKey) {
@@ -177,17 +179,29 @@ function CheckAuthKeyFromRequestIsBad(req) {
 	}
 }
 
-// - Sanity Checking
+// -- Sanity Checking
 // CheckDoesServerAlreadyExist: Checks if the server exists in our cache, by name.
-function CheckDoesServerAlreadyExist(name) {
-	var doesExist = knownServers.filter((server) => server.name === name);
-	if(doesExist.length > 0) {
+function CheckDoesServerAlreadyExist(needle) {
+	var haystack = knownServers.filter((server) => server.name === needle);
+	if(haystack.length > 0) {
 		return true;
 	}
 	
 	// Fall though.
 	return false;
 }
+
+// CheckDoesServerUuidAlreadyExist: Like above, but checks for UUID.
+function CheckDoesServerUuidAlreadyExist(needle) {
+	var haystack = knownServers.filter((server) => server.uuid === needle);
+	if(haystack.length > 0) {
+		return true;
+	}
+	
+	// Fall though.
+	return false;
+}
+
 
 // CheckExistingServerCollision: Checks if the server exists in our cache, by IP address and port.
 function CheckExistingServerCollision(ipAddress, port) {
@@ -359,6 +373,7 @@ function AddToServerList(req, res) {
 		return res.sendStatus(400);
 	}
 	
+	// Generate a new UUID for this server.
 	var generatedUuid = generateUuid();
 	
 	var newServer = { 
@@ -404,7 +419,7 @@ function RemoveServerFromList(req, res) {
 		return res.sendStatus(400);
 	}
 	
-	if(!CheckDoesServerAlreadyExist(req.body.serverUuid, knownServers)) {
+	if(!CheckDoesServerUuidAlreadyExist(req.body.serverUuid)) {
 		loggerInstance.warn(`Delete request from ${req.ip} denied: No such server with ID '${req.body.serverUuid}'`);
 		return res.sendStatus(400);
 	} else {
@@ -418,7 +433,7 @@ function RemoveServerFromList(req, res) {
 async function RemoveOldServers() {
 	knownServers = knownServers.filter((freshServer) => (freshServer.lastUpdated >= Date.now()));
 	
-    // setTimeout uses milliseconds, so we need to set it to the correct value.
+	// setTimeout uses milliseconds, so we need to set it to the correct value.
 	// inactiveServerTimeout is treated as minutes, so we need to multiply it by 60 to get seconds, then
 	// convert that to milliseconds by multiplying it by 1000.
 	setTimeout(RemoveOldServers, configuration.Pruning.inactiveServerTimeout * 60 * 1000);
@@ -442,4 +457,4 @@ if(configuration.Pruning.enabled == true) {
 }
 
 expressApp.listen(configuration.Core.listenPort,
-	() => console.log(`NodeLS is listening on ${configuration.Core.listenPort}.`));
+	() => console.log(`NodeLS is running, listening for connections on port ${configuration.Core.listenPort}.`));
