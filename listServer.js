@@ -352,7 +352,7 @@ function apiAddToServerList(req, res) {
 			return res.sendStatus(400);
 		}
 
-		var newUuid= req.body.serverUuid;
+		var newUuid = req.body.serverUuid;
 		//var newUuid = generateUuid();
 
 		// We'll get the IP address directly, don't worry about that
