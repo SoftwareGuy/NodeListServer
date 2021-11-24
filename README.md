@@ -79,9 +79,7 @@ git clone https://github.com/SoftwareGuy/NodeListServer .
 
 ## Configuration
 
-1. Open `config.ini`.
-2. Carefully make any adjustments to the configuration as desired (see [the configuration page](CONFIGURATION.md) for more information).
-3. Save and Exit. Re-upload your modified `config.ini` (ie. you edited it via FTP).
+***TODO: UPDATE THIS SECTION***
 
 ## Operating & Updating
 
@@ -89,21 +87,15 @@ git clone https://github.com/SoftwareGuy/NodeListServer .
 
 ### Starting & Stopping
 
-**First Run:**
-Install the Node modules by issuing `npm install --only=production`. This will read the requirements from packages.json.
+#### First Run
+Install the required node modules by issuing `npm install --only=production` inside the directory where you cloned the repository. This will read the requirements from packages.json.
 
-**To start the server:**
+#### Starting NodeLS
 
 _Protip: Check to see if the port is open that you want NodeListServer to listen on. **You cannot have more than one list server listening on the same port number.**_
 
-1.  Invoke NodeJS with `listServer.js`. This is dependent on your operating system, but if Node is installed in your path, you can simply do `node listServer`. Please ensure you use the Node 12.x binary.
-2.  Observe the logs that are printed to the console, if the list server does not say anything then something went wrong. A successful startup is as follows:
-
-```
-NodeListServer Gen2: Mirror List Server reimplemented in NodeJS
-Report bugs and fork me on GitHub: https://github.com/SoftwareGuy/NodeListServer
-Listening on HTTP port 8889!
-```
+1.  Invoke NodeJS with `listServer.js`. This is dependent on your operating system, but if Node is installed in your path, you can simply do `node listServer`. Any recent Node installation will work, but I recommend the LTS versions rather than "Current" ones.
+2.  Observe the logs that are printed to the console, if the list server does not say anything then something went wrong.
 
 3.  Issue a HTTP POST command like the following to `http://[your-server-ip]:8889/list`. cURL is very useful as a debug tool, so here's a one liner. Replace `NodeListServerDefaultKey` with your changed key if you changed that.
 
@@ -113,15 +105,15 @@ curl -X POST -d "serverKey=NodeListServerDefaultKey" http://127.0.0.1:8889/list
 
 If all goes well, you should get some JSON as a result. If you don't, or you get `Bad Request` then check what the console says - you dun goofed probably.
 
-**To stop the server:**
+#### Stopping NodeLS
 
-Simply CTRL+C the running Node process, or you can use `kill`/`pkill` to kill the node instance. I'd recommend using `ps aux` and `kill <pid>` carefully, because `pkill node` would try to kill all node instances on your box - and that's really no bueno.
+Simply CTRL+C the running Node process, or you can use `kill`/`pkill` to kill the node instance. I'd recommend using `ps aux` and `kill <pid>` carefully, because `pkill node` would try to kill all node instances on your box - and that's really no bueno. If you're using PM2 to manage NodeLS, use `pm2 stop <id of NodeLS instance, eg. 1>`
 
-### Updating NodeListServer
+#### Updating NodeLS
 
 1.  Stop NodeListServer if it's running.
 2.  Execute `git pull` from the repository you cloned to your local machine or server instance. 
-    -   Note that if you obtained the source via a ZIP archive, then you're not going to be able to just execute `git pull`. Download and extract a new ZIP archive of this repository instead.
+    -   Note that if you obtained the source via a ZIP archive, then you're not going to be able to just execute `git pull`. Download and extract a new ZIP archive of this repository instead. Skip to step 4 if that is the case.
 3.  New commits will update your installation of NodeListServer after running `git pull`.
     -   Rectify any pull merge errors if you have any (and you should know how to do this).
 4.  Start NodeListServer again.
@@ -131,6 +123,8 @@ Simply CTRL+C the running Node process, or you can use `kill`/`pkill` to kill th
 Section omitted because it needs cleanup. Check back later.
 
 ## Using NodeListServer with Unity
+
+***TODO: Outdated. Update this!***
 
 Want a easy, ready to go project? Then grab a copy of the  [NodeListServer-Example](https://github.com/SoftwareGuy/NodeListServer-Example) repository.
 
@@ -181,9 +175,10 @@ Make sure you POST the correct data when you want to add/remove servers. See API
 
 ## Credits
 
--   vis2k: Mirror Networking and the original List Server
--	JesusLuvsYooh: That other blacksmith that's forging NodeLS into shape and always annoying me with questions
+-   tatelax: Security patches, improvements.
+-	JesusLuvsYooh: Improvements, suggestions
 -	AnthonyE: First actual deployment of NodeLS in production!
+-	vis2k: MirrorLS for which NodeLS was modelled after
 -   Mirror Team & Discord Members
 
 ***Thank you for choosing Australian Open Source Software.***
