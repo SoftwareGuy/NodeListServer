@@ -19,6 +19,9 @@ other than the server provider you deal with.
 
 _**Please consider a donation (see the Ko-Fi button above) if this server software is useful to you.**_
 
+## Support Update
+While issue tickets are the preferred way of support, you may also ask for support on the [Oiran Studio Discord](https://discord.gg/kUvJYjrbHE). It may be a faster way of getting support if I'm not busy with other client tasks. Sometimes issue ticket notificatons get snowed under a truck load of new email.
+
 ## Features
 
 -   **OSS Core:** Feel free to tailor it to your needs, it's open source. Find a bug? Fix it, shoot me a PR, let me review and if it looks good, congrats!
