@@ -322,8 +322,6 @@ function apiAddToServerList(req, res) {
 	// If we do not have a server UUID: Then it's possible we're trying to register the server entry.
 	// If neither, on your bike mate, ya ain't welcome here.
 	if(typeof req.body.serverUuid != "undefined") {
-		console.log("DEBUGGING: Possibly a existing server!");
-
 		potentialExistingServer = true;
 		potentialExistingServerId = req.body.serverUuid.trim();
 	}
@@ -332,13 +330,8 @@ function apiAddToServerList(req, res) {
 	if(potentialExistingServer) {
 		// Does it really exist, tho?
 		if(apiDoesServerExistByUuid(potentialExistingServerId)) {
-			console.log("DEBUGGING: Oh wow, it really does exist!");
-
+			// Hand it over to the update routine.
 			apiUpdateServerInList(req, res, potentialExistingServerId);
-	
-			// res.send("It's bloody stubbed mate.");
-			// loggerInstance.info(`Update server: '${req.body.serverName}' from ${req.ip}. UUID: '${req.body.serverUuid}'`);
-			// apiUpdateServerInList(req, res);
 		} else {
 			// Too bad. Go home.
 			loggerInstance.warn(`Request from ${req.ip} denied: No such server with UUID '${potentialExistingServerId}'`);
