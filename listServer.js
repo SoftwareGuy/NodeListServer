@@ -95,7 +95,7 @@ function translateConfigOptionToBool(value) {
 		return false;
 	else
 		// Thanks to https://medium.com/geekculture/20-javascript-snippets-to-code-like-a-pro-86f5fda5598e
-		return !!value;		
+		return !!value;
 }
 
 // Constant references to various modules.
@@ -311,7 +311,7 @@ function apiUpdateServerInList(req, res) {
 	knownServers = notTheServerInQuestion;
 
 	loggerInstance.info(`Updated information for '${updatedServer.name}', requested by ${req.ip}`);
-	return res.send("serverInQuestion.uuid");
+	return res.send(200); // 200 OK
 }
 
 // apiAddToServerList: Adds a server to the list.
@@ -324,7 +324,7 @@ function apiAddToServerList(req, res) {
 	if(translateConfigOptionToBool(configuration.Auth.useAccessControl) && !allowedServerAddresses.includes(req.ip)) {
 		// Not allowed.
 		loggerInstance.warn(`Request from ${req.ip} denied: Not in ACL.`);
-		return res.sendStatus(403);
+		return res.sendStatus(403);	// 403 Forbidden
 	}
 
 	// Sanity Checks
