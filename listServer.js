@@ -263,54 +263,36 @@ function apiGetServerList(req, res) {
 }
 
 // apiUpdateServerInList: Updates a server in the list.
-function apiUpdateServerInList(req, res) {
+function apiUpdateServerInList(req, res, serverId) {
 
 	// TODO: Improve this. This feels ugly hack tier and I feel it could be more elegant.
 	// If anyone has a PR to improves this, please send me a PR.
-	var serverInQuestion = knownServers.filter((server) => (server.uuid === req.body.serverUuid))[0];
-	var notTheServerInQuestion = knownServers.filter((server) => (server.uuid !== req.body.serverUuid));
+	var serverInQuestion = knownServers.filter((server) => (server.uuid === serverId))[0];
+	var theRemainingStack = knownServers.filter((server) => (server.uuid !== serverId));
 
-	var updatedServer = [];
-	updatedServer["uuid"] = serverInQuestion.uuid;
-	updatedServer["ip"] = serverInQuestion.ip;
-
-	updatedServer["port"] = serverInQuestion.port;
+	// We will not be updating the uuid, ip or port.
 	updatedServer["capacity"] = serverInQuestion.capacity;
 
-	if(typeof req.body.serverExtras !== "undefined") {
+	if(typeof req.body.serverExtras !== "undefined")
 		updatedServer["extras"] = req.body.serverExtras.trim();
-	} else {
-		updatedServer["extras"] = serverInQuestion.extras;
-	}
-
-	if(typeof req.body.serverName !== "undefined") {
+	
+	if(typeof req.body.serverName !== "undefined")
 		updatedServer["name"] = req.body.serverName.trim();
-	} else {
-		updatedServer["name"] = serverInQuestion.name;
-	}
 
-	if(typeof req.body.serverPlayers !== "undefined") {
-		if(isNaN(parseInt(req.body.serverPlayers, 10))) {
-			updatedServer["players"] = 0;
-		} else {
-			updatedServer["players"] = parseInt(req.body.serverPlayers, 10);
-		}
-	} else {
-		updatedServer["players"] = serverInQuestion.players;
-	}
-
+	if(typeof req.body.serverPlayers !== "undefined")
+		updatedServer["players"] = isNaN(parseInt(req.body.serverPlayers, 10)) ? 0 : parseInt(req.body.serverPlayers, 10);
+	
 	// Server capacity might have changed, let's update that if needed
-	if(typeof req.body.serverCapacity !== "undefined" || !isNaN(req.body.serverCapacity)) {
-		updatedServer["capacity"] = parseInt(req.body.serverCapacity, 10);
-	}
+	if(typeof req.body.serverCapacity !== "undefined" || !isNaN(req.body.serverCapacity)) 
+		updatedServer["capacity"] = isNaN(req.body.serverCapacity) ? 0 : parseInt(req.body.serverCapacity, 10);
 
 	updatedServer["lastUpdated"] = (Date.now() + (configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000));
 
 	// Push the server back onto the stack.
-	notTheServerInQuestion.push(updatedServer);
-	knownServers = notTheServerInQuestion;
+	theRemainingStack.push(updatedServer);
+	knownServers = theRemainingStack;
 
-	loggerInstance.info(`Updated information for '${updatedServer.name}', requested by ${req.ip}`);
+	loggerInstance.info(`Handled update request for server '${updatedServer.uuid}' (${updatedServer.name}) requested by ${req.ip}`);
 	return res.send(200); // 200 OK
 }
 
@@ -345,16 +327,18 @@ function apiAddToServerList(req, res) {
 		console.log("DEBUGGING: Possibly a existing server!");
 
 		potentialExistingServer = true;
-		potentialExistingServerId = req.body.serverUuid;
+		potentialExistingServerId = req.body.serverUuid.trim();
 	}
 
 	// If this is a potential existing server...
 	if(potentialExistingServer) {
 		// Does it really exist, tho?
-		if(apiDoesServerExistByUuid(req.body.serverUuid)) {
+		if(apiDoesServerExistByUuid(potentialExistingServerId)) {
 			console.log("DEBUGGING: Oh wow, it really does exist!");
-			
-			res.send("It's bloody stubbed mate.");
+
+			apiUpdateServerInList(req, res, potentialExistingServerId);
+	
+			// res.send("It's bloody stubbed mate.");
 			// loggerInstance.info(`Update server: '${req.body.serverName}' from ${req.ip}. UUID: '${req.body.serverUuid}'`);
 			// apiUpdateServerInList(req, res);
 		} else {
@@ -363,9 +347,7 @@ function apiAddToServerList(req, res) {
 			return res.sendStatus(400);
 		}
 	} else {
-		// Must be a new server trying to add itself.
-		console.log("DEBUGGING: New server, doesn't potentially exist");
-		
+		// Must be a new server trying to add itself.	
 		// Check to make sure the server name isn't null.
 		if(typeof req.body.serverName === "undefined") {
 			loggerInstance.warn(`Request from ${req.ip} denied: Server name is null/undefined.`);
