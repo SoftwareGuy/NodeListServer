@@ -291,7 +291,7 @@ function apiUpdateServerInList(req, res, serverId) {
 	knownServers = theRemainingStack;
 
 	loggerInstance.info(`Handled update request for server '${updatedServer.uuid}' (${updatedServer.name}) requested by ${req.ip}`);
-	return res.send(200); // 200 OK
+	return res.sendStatus(200); // 200 OK
 }
 
 // apiAddToServerList: Adds a server to the list.
