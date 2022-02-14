@@ -271,21 +271,19 @@ function apiUpdateServerInList(req, res, serverId) {
 	var theRemainingStack = knownServers.filter((server) => (server.uuid !== serverId));
 
 	// We will not be updating the uuid, ip or port.
-	updatedServer["capacity"] = serverInQuestion.capacity;
-
-	if(typeof req.body.serverExtras !== "undefined")
-		updatedServer["extras"] = req.body.serverExtras.trim();
-	
 	if(typeof req.body.serverName !== "undefined")
 		updatedServer["name"] = req.body.serverName.trim();
 
 	if(typeof req.body.serverPlayers !== "undefined")
-		updatedServer["players"] = isNaN(parseInt(req.body.serverPlayers, 10)) ? 0 : parseInt(req.body.serverPlayers, 10);
+		updatedServer["players"] = isNaN(parseInt(req.body.serverPlayers, 10)) ? updatedServer.players : parseInt(req.body.serverPlayers, 10);
 	
 	// Server capacity might have changed, let's update that if needed
 	if(typeof req.body.serverCapacity !== "undefined" || !isNaN(req.body.serverCapacity)) 
-		updatedServer["capacity"] = isNaN(req.body.serverCapacity) ? 0 : parseInt(req.body.serverCapacity, 10);
+		updatedServer["capacity"] = isNaN(req.body.serverCapacity) ? updatedServer.capacity	: parseInt(req.body.serverCapacity, 10);
 
+	if(typeof req.body.serverExtras !== "undefined")
+		updatedServer["extras"] = req.body.serverExtras.trim();
+	
 	updatedServer["lastUpdated"] = (Date.now() + (configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000));
 
 	// Push the server back onto the stack.
