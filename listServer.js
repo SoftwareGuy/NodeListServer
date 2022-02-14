@@ -391,7 +391,8 @@ function apiAddToServerList(req, res) {
 		newServer["players"] = (typeof req.body.serverPlayers === "undefined" || isNaN(req.body.serverPlayers)) ? 0 : parseInt(req.body.serverPlayers, 10);
 		newServer["capacity"] = (typeof req.body.serverCapacity === "undefined" || isNaN(req.body.serverCapacity)) ? 0 : parseInt(req.body.serverCapacity, 10);
 		newServer["extras"] = (typeof req.body.serverExtras !== "undefined") ? req.body.serverExtras.trim() : "";
-
+		newServer["lastUpdated"] = (Date.now() + (configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000));
+		
 		knownServers.push(newServer);
 		
 		// Log it and send back the UUID to the client - they'll need it for later.
