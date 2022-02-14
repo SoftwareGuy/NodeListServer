@@ -267,7 +267,7 @@ function apiUpdateServerInList(req, res, serverId) {
 
 	// TODO: Improve this. This feels ugly hack tier and I feel it could be more elegant.
 	// If anyone has a PR to improves this, please send me a PR.
-	var serverInQuestion = knownServers.filter((server) => (server.uuid === serverId))[0];
+	var updatedServer = knownServers.filter((server) => (server.uuid === serverId))[0];
 	var theRemainingStack = knownServers.filter((server) => (server.uuid !== serverId));
 
 	// We will not be updating the uuid, ip or port.
