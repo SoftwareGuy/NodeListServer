@@ -102,12 +102,21 @@ const expressApp = expressServer();
 const bodyParser = require("body-parser");
 
 // Setup the rate limiter...
-const limiter = expressRateLimiter({
-  windowMs: configuration.Security.rateLimiterWindowMs, 	
-  max: configuration.Security.rateLimiterMaxApiRequestsPerWindow
-});
+// Note: We check if this is undefined as well as set to true, because we may be
+// using an old configuration ini file that doesn't have the new setting in it.
+// Enabled by default, unless explicitly disabled.
+if(typeof configuration.Security.useRateLimiter === "undefined" || translateConfigOptionToBool(configuration.Auth.useAccessControl)) {
+	loggerInstance.info("Enabling the Express Rate Limiter module.")
 
-expressApp.use(limiter);
+	const limiter = expressRateLimiter({
+		windowMs: configuration.Security.rateLimiterWindowMs,
+		max: configuration.Security.rateLimiterMaxApiRequestsPerWindow
+	});
+
+	expressApp.use(limiter);
+}
+
+// Make sure we use some other things too.
 expressApp.use(bodyParser.json());
 expressApp.use(bodyParser.urlencoded({ extended: true }));
 
