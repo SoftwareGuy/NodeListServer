@@ -392,7 +392,7 @@ function apiAddToServerList(req, res) {
 		// Check for a sneaky IP address and port collison attempt.
 		queriedAddress = req.body.ip ?? req.ip;
 		
-		if(apiDoesThisServerExistByAddressPort(queriedAddress, req.body.serverPort) {
+		if(apiDoesThisServerExistByAddressPort(queriedAddress, req.body.serverPort)) {
 			loggerInstance.warn(`Request from ${req.ip} denied: Server collision! We're attempting to add a server that's already known.`);
 			return res.sendStatus(400);
 		}
