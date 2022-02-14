@@ -91,7 +91,7 @@ if (fs.existsSync("config.ini")) {
 // especially how to cast a string into a boolean. ie. "true" -> true.
 // In C# I would do bool.TryParse or some other cast.
 function translateConfigOptionToBool(value) {
-	if(typeof value === "undefined" || value === "false") 
+	if(typeof value === "undefined" || value === "false")
 		return false;
 	else
 		// Thanks to https://medium.com/geekculture/20-javascript-snippets-to-code-like-a-pro-86f5fda5598e
@@ -156,7 +156,7 @@ function apiCheckKey(clientKey) {
 	if(clientKey === configuration.Auth.communicationKey)
 		return true;
 	else
-		return false;	
+		return false;
 }
 
 // apiIsKeyFromRequestIsBad: The name is a mouthful, but checks if the key is bad.
@@ -173,8 +173,8 @@ function apiIsKeyFromRequestIsBad(req) {
 // - Sanity Checking
 // apiDoesServerExistByUuid: Checks if the server exists in our cache, by UUID.
 function apiDoesServerExistByUuid(uuid) {
-	var doesExist = knownServers.filter((server) => server.uuid === uuid);
-	
+	var doesExist = knownServers.filter((server) => server.uuid === uuid.trim());
+
 	if(doesExist.length > 0) {
 		return true;
 	}
@@ -186,7 +186,7 @@ function apiDoesServerExistByUuid(uuid) {
 // apiDoesServerExist: Checks if the server exists in our cache, by UUID.
 function apiDoesServerExistByName(name) {
 	var doesExist = knownServers.filter((server) => server.name === name);
-	
+
 	if(doesExist.length > 0) {
 		return true;
 	}
@@ -197,7 +197,7 @@ function apiDoesServerExistByName(name) {
 
 // apiDoesThisServerExistByAddressPort: Checks if the server exists in our cache, by IP address and port.
 function apiDoesThisServerExistByAddressPort(ipAddress, port) {
-	var doesExist = knownServers.filter((servers) => (servers.ip === ipAddress && servers.port === port));
+	var doesExist = knownServers.filter((servers) => (servers.ip === ipAddress.trim() && servers.port === port));
 	if(doesExist.length > 0) {
 		return true;
 	}
@@ -316,92 +316,108 @@ function apiUpdateServerInList(req, res) {
 
 // apiAddToServerList: Adds a server to the list.
 function apiAddToServerList(req, res) {
+
 	// Doorstopper.
 	if(apiIsKeyFromRequestIsBad(req))
 		return res.sendStatus(400);
 
-	// Are we using access control? If so, are they allowed to do this?
+	var potentialExistingServer = false;
+	var potentialExistingServerId = "";
+
+	// Check with access control, if that's enabled.
 	if(translateConfigOptionToBool(configuration.Auth.useAccessControl) && !allowedServerAddresses.includes(req.ip)) {
-		// Not allowed.
-		loggerInstance.warn(`Request from ${req.ip} denied: Not in ACL.`);
+		// It's not allowed. On ya bike mate.
+		loggerInstance.warn(`Request denied from ${req.ip}: Not in ACL.`);
 		return res.sendStatus(403);	// 403 Forbidden
 	}
 
-	// Sanity Checks
+	// Ensure we have post data body. If not, begone.
 	if(typeof req.body === "undefined") {
-		loggerInstance.warn(`Request from ${req.ip} denied: There was no body attached to the request.`);
+		loggerInstance.warn(`Request denied from ${req.ip}: No POST body data?`);
 		return res.sendStatus(400);
 	}
 
-	if(typeof req.body.serverName === "undefined" || typeof req.body.serverPort === "undefined") {
-		loggerInstance.warn(`Request from ${req.ip} denied: UUID, name and/or port is bogus.`);
-		return res.sendStatus(400);
+	// Now do we have a UUID already?
+	// If we do have a server UUID: Then it's possible we're trying to update the server entry.
+	// If we do not have a server UUID: Then it's possible we're trying to register the server entry.
+	// If neither, on your bike mate, ya ain't welcome here.
+	if(typeof req.body.serverUuid != "undefined") {
+		console.log("DEBUGGING: Possibly a existing server!");
+
+		potentialExistingServer = true;
+		potentialExistingServerId = req.body.serverUuid;
 	}
 
-	if(isNaN(req.body.serverPort) || req.body.serverPort < 0 || req.body.serverPort > 65535) {
-		loggerInstance.warn(`Request from ${req.ip} denied: Port was out of bounds.`);
-		return res.sendStatus(400);
-	}
-
-	// Add the server to the list.
-	// Checkpoint 1: UUID Collision check
-	// If there's a UUID collision before we add the server then update the matching server.
-	if(apiDoesServerExistByUuid(req.body.serverUuid))
-	{
-		// Collision - update!
-		loggerInstance.info(`Update server: '${req.body.serverName}' from ${req.ip}. UUID: '${req.body.serverUuid}'`);
-		apiUpdateServerInList(req, res);
-	}
-	else
-	{
-		if(apiDoesServerExistByName(req.body.serverName)) {
-			loggerInstance.warn(`Server name already exists ${req.body.serverName}'.`);
+	// If this is a potential existing server...
+	if(potentialExistingServer) {
+		// Does it really exist, tho?
+		if(apiDoesServerExistByUuid(req.body.serverUuid)) {
+			console.log("DEBUGGING: Oh wow, it really does exist!");
+			
+			res.send("It's bloody stubbed mate.");
+			// loggerInstance.info(`Update server: '${req.body.serverName}' from ${req.ip}. UUID: '${req.body.serverUuid}'`);
+			// apiUpdateServerInList(req, res);
+		} else {
+			// Too bad. Go home.
+			loggerInstance.warn(`Request from ${req.ip} denied: No such server with UUID '${potentialExistingServerId}'`);
 			return res.sendStatus(400);
 		}
-
-		// Checkpoint 2: IP and Port collision check
-		// If there's already a server on this IP or Port then don't add the server to the cache. This will stop duplicates.
-		if(apiDoesThisServerExistByAddressPort(req.ip, req.body.serverPort)) {
-			// Collision - abort!
-			loggerInstance.warn(`Server IP and Port collision check failed for ${req.ip}'.`);
+	} else {
+		// Must be a new server trying to add itself.
+		console.log("DEBUGGING: New server, doesn't potentially exist");
+		
+		// Check to make sure the server name isn't null.
+		if(typeof req.body.serverName === "undefined") {
+			loggerInstance.warn(`Request from ${req.ip} denied: Server name is null/undefined.`);
 			return res.sendStatus(400);
 		}
-
-		var newUuid = req.body.serverUuid;
-		//var newUuid = generateUuid();
-
-		// We'll get the IP address directly, don't worry about that
+		
+		// If our security setting doesn't allow duplicate server names, then we should check to ensure that 
+		// it doesn't clash.
+		if(!translateConfigOptionToBool(configuration.Security.allowDuplicateServerNames)) {
+			if(apiDoesServerExistByName(req.body.serverName)) {
+				loggerInstance.warn(`Request from ${req.ip} denied: Server name clashes with an existing server name.`);
+				return res.sendStatus(400);
+			}
+		}
+		
+		// Okay, the server name got past our basic checks, stash it.
+		// newServer.name = req.body.serverName.trim();
+		
+		// Now we need to check to ensure the server port isn't out of bounds.
+		// Port 0 doesn't exist as per se, so we need to make sure we're valid.
+		if(typeof req.body.serverPort === "undefined" || isNaN(req.body.serverPort) || req.body.serverPort < 1 || req.body.serverPort > 65535) {
+			loggerInstance.warn(`Request from ${req.ip} denied: Server port is undefined, below 1 or above 65335.`);
+			return res.sendStatus(400);
+		}
+		
+		// Check for a sneaky IP address and port collison attempt.
+		queriedAddress = req.body.ip ?? req.ip;
+		
+		if(apiDoesThisServerExistByAddressPort) {
+			loggerInstance.warn(`Request from ${req.ip} denied: Server collision! We're attempting to add a server that's already known.");
+			return res.sendStatus(400);
+		}
+		
+		// Time to wrap things up.
 		var newServer = {
-			"uuid": newUuid,
+			"uuid": generateUuid(),
 			"ip": req.body.ip ?? req.ip,
-			"name": req.body.serverName,
+			"name": req.body.serverName.trim(),
 			"port": parseInt(req.body.serverPort, 10),
-			"lastUpdated": (Date.now() + (configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000))
 		};
-
+		
 		// Extra field santitization
-		if(typeof req.body.serverPlayers === "undefined" || isNaN(req.body.serverPlayers)) {
-			newServer["players"] = 0;
-		} else {
-			newServer["players"] = parseInt(req.body.serverPlayers, 10);
-		}
+		newServer["players"] = (typeof req.body.serverPlayers === "undefined" || isNaN(req.body.serverPlayers) ? 0 : parseInt(req.body.serverPlayers, 10);
+		newServer["capacity"] = (typeof req.body.serverCapacity === "undefined" || isNaN(req.body.serverCapacity)) ? 0 : parseInt(req.body.serverCapacity, 10);
 
-		if(typeof req.body.serverCapacity === "undefined" || isNaN(req.body.serverCapacity)) {
-			newServer["capacity"] = 0;
-		} else {
-			newServer["capacity"] = parseInt(req.body.serverCapacity, 10);
-		}
-
-		if(typeof req.body.serverExtras !== "undefined") {
-			newServer["extras"] = req.body.serverExtras;
-		} else {
-			newServer["extras"] = "";
-		}
+		newServer["extras"] = (typeof req.body.serverExtras !== "undefined") ? req.body.serverExtras.trim() : "";
 
 		knownServers.push(newServer);
-
-		loggerInstance.info(`New server added: '${req.body.serverName}' from ${newServer.ip}. UUID: '${newUuid}'`);
-		return res.send(newUuid);
+		
+		// Log it and send back the UUID to the client - they'll need it for later.
+		loggerInstance.info(`Handled add server request from ${req.ip}: ${newServer["uuid"]} ('${newServer["name"]}')`);
+		return res.send(newServer["uuid"]);
 	}
 }
 
@@ -409,7 +425,7 @@ function apiAddToServerList(req, res) {
 function apiRemoveFromServerList(req, res) {
 	// Doorstopper.
 	if(apiIsKeyFromRequestIsBad(req))
-		return res.sendStatus(400);	
+		return res.sendStatus(400);
 
 	// Are we using access control? If so, are they allowed to do this?
 	if(translateConfigOptionToBool(configuration.Auth.useAccessControl) && !allowedServerAddresses.includes(req.ip)) {
