@@ -91,11 +91,8 @@ if (fs.existsSync("config.ini")) {
 // especially how to cast a string into a boolean. ie. "true" -> true.
 // In C# I would do bool.TryParse or some other cast.
 function translateConfigOptionToBool(value) {
-	if(value === "true" || value === 1) {
-		return true;
-	} else {
-		return false;
-	}
+	// Thanks to https://medium.com/geekculture/20-javascript-snippets-to-code-like-a-pro-86f5fda5598e
+	return !!value;
 }
 
 // Constant references to various modules.
@@ -108,14 +105,13 @@ const bodyParser = require("body-parser");
 // using an old configuration ini file that doesn't have the new setting in it.
 // Enabled by default, unless explicitly disabled.
 if(typeof configuration.Security.useRateLimiter === "undefined" || translateConfigOptionToBool(configuration.Security.useRateLimiter)) {
-	loggerInstance.info("Enabling the Express Rate Limiter module.");
-	
 	const expressRateLimiter = require("express-rate-limit");
 	const limiter = expressRateLimiter({
 		windowMs: configuration.Security.rateLimiterWindowMs,
 		max: configuration.Security.rateLimiterMaxApiRequestsPerWindow
 	});
 
+	console.log("Security: Enabling the rate limiter module.");
 	expressApp.use(limiter);
 }
 
