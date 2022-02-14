@@ -91,8 +91,11 @@ if (fs.existsSync("config.ini")) {
 // especially how to cast a string into a boolean. ie. "true" -> true.
 // In C# I would do bool.TryParse or some other cast.
 function translateConfigOptionToBool(value) {
-	// Thanks to https://medium.com/geekculture/20-javascript-snippets-to-code-like-a-pro-86f5fda5598e
-	return !!value;
+	if(typeof value === "undefined" || value === "false") 
+		return false;
+	else
+		// Thanks to https://medium.com/geekculture/20-javascript-snippets-to-code-like-a-pro-86f5fda5598e
+		return !!value;		
 }
 
 // Constant references to various modules.
