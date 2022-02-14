@@ -100,7 +100,9 @@ const expressServer = require("express");
 const expressApp = expressServer();
 const bodyParser = require("body-parser");
 
-// Setup the rate limiter...
+// Security checks
+
+// - Rate Limiter
 // Note: We check if this is undefined as well as set to true, because we may be
 // using an old configuration ini file that doesn't have the new setting in it.
 // Enabled by default, unless explicitly disabled.
@@ -115,17 +117,21 @@ if(typeof configuration.Security.useRateLimiter === "undefined" || translateConf
 	expressApp.use(limiter);
 }
 
+// - Access Control List (ACL)
+// Allowed server addresses cache.
+var allowedServerAddresses = [];
+
+if(translateConfigOptionToBool(configuration.Auth.useAccessControl)) {
+	console.log("Security: Beware, Access Control Lists are enabled.");
+	allowedServerAddresses = configuration.Auth.allowedIpAddresses.split(",");
+}
+
 // Make sure we use some other things too.
 expressApp.use(bodyParser.json());
 expressApp.use(bodyParser.urlencoded({ extended: true }));
 
 // Server memory array cache.
 var knownServers = [];
-
-var allowedServerAddresses = [];
-if(translateConfigOptionToBool(configuration.Auth.useAccessControl)) {
-	allowedServerAddresses = configuration.Auth.allowedIpAddresses.split(",");
-}
 
 // Functions used by NodeListServer
 // - Utilities
