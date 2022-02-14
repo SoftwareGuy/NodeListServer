@@ -9,7 +9,7 @@
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -19,6 +19,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+
+const REVISION_VER = 3;
+
 // ---------------
 // Require some essential libraries and modules.
 // ---------------
@@ -44,7 +47,7 @@ var logFile = "NodeListServer.log";
 fs.access(__dirname, fs.constants.W_OK, function(err) {
   if(err){
 	console.warn("Can't write to disk; logging to file will be disabled!");
-	
+
 	// Configure Log4js
 	log4js.configure({
 	  appenders: {
@@ -97,7 +100,6 @@ function translateConfigOptionToBool(value) {
 
 // Constant references to various modules.
 const expressServer = require("express");
-const expressRateLimiter = require("express-rate-limit");
 const expressApp = expressServer();
 const bodyParser = require("body-parser");
 
@@ -105,9 +107,10 @@ const bodyParser = require("body-parser");
 // Note: We check if this is undefined as well as set to true, because we may be
 // using an old configuration ini file that doesn't have the new setting in it.
 // Enabled by default, unless explicitly disabled.
-if(typeof configuration.Security.useRateLimiter === "undefined" || translateConfigOptionToBool(configuration.Auth.useAccessControl)) {
-	loggerInstance.info("Enabling the Express Rate Limiter module.")
-
+if(typeof configuration.Security.useRateLimiter === "undefined" || translateConfigOptionToBool(configuration.Security.useRateLimiter)) {
+	loggerInstance.info("Enabling the Express Rate Limiter module.");
+	
+	const expressRateLimiter = require("express-rate-limit");
 	const limiter = expressRateLimiter({
 		windowMs: configuration.Security.rateLimiterWindowMs,
 		max: configuration.Security.rateLimiterMaxApiRequestsPerWindow
@@ -128,6 +131,9 @@ if(translateConfigOptionToBool(configuration.Auth.useAccessControl)) {
 	allowedServerAddresses = configuration.Auth.allowedIpAddresses.split(",");
 }
 
+// Functions used by NodeListServer
+// - Utilities
+// Generates a UUID for a newly added server.
 function generateUuid() {
 	var generatedUuid = uuid.v4();
 	var doesExist = knownServers.filter((server) => server.uuid === generatedUuid); // Used for collision check
@@ -142,11 +148,10 @@ function generateUuid() {
 // - Authentication
 // apiCheckKey: Checks to see if the client specified key matches.
 function apiCheckKey(clientKey) {
-	if(clientKey === configuration.Auth.communicationKey) {
+	if(clientKey === configuration.Auth.communicationKey)
 		return true;
-	} else {
-		return false;
-	}
+	else
+		return false;	
 }
 
 // apiIsKeyFromRequestIsBad: The name is a mouthful, but checks if the key is bad.
@@ -164,10 +169,11 @@ function apiIsKeyFromRequestIsBad(req) {
 // apiDoesServerExistByUuid: Checks if the server exists in our cache, by UUID.
 function apiDoesServerExistByUuid(uuid) {
 	var doesExist = knownServers.filter((server) => server.uuid === uuid);
+	
 	if(doesExist.length > 0) {
 		return true;
 	}
-	
+
 	// Fall though.
 	return false;
 }
@@ -175,10 +181,11 @@ function apiDoesServerExistByUuid(uuid) {
 // apiDoesServerExist: Checks if the server exists in our cache, by UUID.
 function apiDoesServerExistByName(name) {
 	var doesExist = knownServers.filter((server) => server.name === name);
+	
 	if(doesExist.length > 0) {
 		return true;
 	}
-	
+
 	// Fall though.
 	return false;
 }
@@ -229,10 +236,10 @@ function apiGetServerList(req, res) {
 			}
 		}
 
-		serverList.push({ 
-			"ip": knownServer.ip, 
-			"name": knownServer.name, 
-			"port": parseInt(knownServer.port, 10), 
+		serverList.push({
+			"ip": knownServer.ip,
+			"name": knownServer.name,
+			"port": parseInt(knownServer.port, 10),
 			"players": parseInt(knownServer.players, 10),
 			"capacity": parseInt(knownServer.capacity, 10),
 			"extras": knownServer.extras
@@ -261,7 +268,7 @@ function apiUpdateServerInList(req, res) {
 	var updatedServer = [];
 	updatedServer["uuid"] = serverInQuestion.uuid;
 	updatedServer["ip"] = serverInQuestion.ip;
-	
+
 	updatedServer["port"] = serverInQuestion.port;
 	updatedServer["capacity"] = serverInQuestion.capacity;
 
@@ -286,9 +293,9 @@ function apiUpdateServerInList(req, res) {
 	} else {
 		updatedServer["players"] = serverInQuestion.players;
 	}
-	
+
 	// Server capacity might have changed, let's update that if needed
-	if(typeof req.body.serverCapacity !== "undefined" || !isNaN(req.body.serverCapacity)) {		
+	if(typeof req.body.serverCapacity !== "undefined" || !isNaN(req.body.serverCapacity)) {
 		updatedServer["capacity"] = parseInt(req.body.serverCapacity, 10);
 	}
 
@@ -306,9 +313,7 @@ function apiUpdateServerInList(req, res) {
 function apiAddToServerList(req, res) {
 	// Doorstopper.
 	if(apiIsKeyFromRequestIsBad(req))
-	{
 		return res.sendStatus(400);
-	}
 
 	// Are we using access control? If so, are they allowed to do this?
 	if(translateConfigOptionToBool(configuration.Auth.useAccessControl) && !allowedServerAddresses.includes(req.ip)) {
@@ -322,7 +327,7 @@ function apiAddToServerList(req, res) {
 		loggerInstance.warn(`Request from ${req.ip} denied: There was no body attached to the request.`);
 		return res.sendStatus(400);
 	}
-	
+
 	if(typeof req.body.serverName === "undefined" || typeof req.body.serverPort === "undefined") {
 		loggerInstance.warn(`Request from ${req.ip} denied: UUID, name and/or port is bogus.`);
 		return res.sendStatus(400);
@@ -333,12 +338,8 @@ function apiAddToServerList(req, res) {
 		return res.sendStatus(400);
 	}
 
-	
-
-	
 	// Add the server to the list.
-	
-	/// Checkpoint 1: UUID Collision check
+	// Checkpoint 1: UUID Collision check
 	// If there's a UUID collision before we add the server then update the matching server.
 	if(apiDoesServerExistByUuid(req.body.serverUuid))
 	{
@@ -352,7 +353,7 @@ function apiAddToServerList(req, res) {
 			loggerInstance.warn(`Server name already exists ${req.body.serverName}'.`);
 			return res.sendStatus(400);
 		}
-		
+
 		// Checkpoint 2: IP and Port collision check
 		// If there's already a server on this IP or Port then don't add the server to the cache. This will stop duplicates.
 		if(apiDoesThisServerExistByAddressPort(req.ip, req.body.serverPort)) {
@@ -365,10 +366,10 @@ function apiAddToServerList(req, res) {
 		//var newUuid = generateUuid();
 
 		// We'll get the IP address directly, don't worry about that
-		var newServer = { 
-			"uuid": newUuid, 
-			"ip": req.body.ip ?? req.ip, 
-			"name": req.body.serverName, 
+		var newServer = {
+			"uuid": newUuid,
+			"ip": req.body.ip ?? req.ip,
+			"name": req.body.serverName,
 			"port": parseInt(req.body.serverPort, 10),
 			"lastUpdated": (Date.now() + (configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000))
 		};
@@ -403,9 +404,7 @@ function apiAddToServerList(req, res) {
 function apiRemoveFromServerList(req, res) {
 	// Doorstopper.
 	if(apiIsKeyFromRequestIsBad(req))
-	{
-		return res.sendStatus(400);
-	}
+		return res.sendStatus(400);	
 
 	// Are we using access control? If so, are they allowed to do this?
 	if(translateConfigOptionToBool(configuration.Auth.useAccessControl) && !allowedServerAddresses.includes(req.ip)) {
@@ -419,12 +418,12 @@ function apiRemoveFromServerList(req, res) {
 		return res.sendStatus(400);
 	}
 
-	// Server isn't specified?	
+	// Server isn't specified?
 	if(typeof req.body.serverUuid === "undefined") {
 		loggerInstance.warn(`Request from ${req.ip} denied: Server UUID was not provided.`);
 		return res.sendStatus(400);
 	}
-	
+
 	if(!apiDoesServerExistByUuid(req.body.serverUuid, knownServers)) {
 		loggerInstance.warn(`Request from ${req.ip} denied: Can't delete server with UUID '${req.body.serverUuid}' from cache.`);
 		return res.sendStatus(400);
@@ -445,15 +444,14 @@ removeOldServers();
 
 
 // -- Start the application -- //
-// Coburn: Moved the actual startup routines here to help boost Codacy's opinion.
-// Callbacks to various functions, leave this alone unless you know what you're doing.
+// Attach the functions to each path we use with NodeLS.
 expressApp.get("/", denyRequest);
 expressApp.post("/list", apiGetServerList);
 expressApp.post("/add", apiAddToServerList);
 expressApp.post("/remove", apiRemoveFromServerList);
 
 // Finally, start the application
-console.log("Welcome to NodeListServer Generation 2 Revision 2");
+console.log(`Welcome to NodeListServer Generation 2 Revision ${REVISION_VER}`);
 console.log("Report bugs and fork the project on GitHub: https://github.com/SoftwareGuy/NodeListServer");
 
-expressApp.listen(configuration.Core.listenPort, () => console.log(`Server listening on port ${configuration.Core.listenPort}.`));
+expressApp.listen(configuration.Core.listenPort, () => console.log(`NodeLS is now listening on port ${configuration.Core.listenPort}.`));
