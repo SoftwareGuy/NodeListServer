@@ -185,7 +185,7 @@ function apiDoesServerExistByUuid(uuid) {
 
 // apiDoesServerExist: Checks if the server exists in our cache, by UUID.
 function apiDoesServerExistByName(name) {
-	var doesExist = knownServers.filter((server) => server.name === name);
+	var doesExist = knownServers.filter((server) => server.name === name.trim());
 
 	if(doesExist.length > 0) {
 		return true;
@@ -374,11 +374,9 @@ function apiAddToServerList(req, res) {
 		
 		// If our security setting doesn't allow duplicate server names, then we should check to ensure that 
 		// it doesn't clash.
-		if(!translateConfigOptionToBool(configuration.Security.allowDuplicateServerNames)) {
-			if(apiDoesServerExistByName(req.body.serverName)) {
-				loggerInstance.warn(`Request from ${req.ip} denied: Server name clashes with an existing server name.`);
-				return res.sendStatus(400);
-			}
+		if(!translateConfigOptionToBool(configuration.Security.allowDuplicateServerNames) && apiDoesServerExistByName(req.body.serverName)) {
+			loggerInstance.warn(`Request from ${req.ip} denied: Server name clashes with an existing server name.`);
+			return res.sendStatus(400);
 		}
 		
 		// Okay, the server name got past our basic checks, stash it.
@@ -395,7 +393,7 @@ function apiAddToServerList(req, res) {
 		queriedAddress = req.body.ip ?? req.ip;
 		
 		if(apiDoesThisServerExistByAddressPort) {
-			loggerInstance.warn(`Request from ${req.ip} denied: Server collision! We're attempting to add a server that's already known.");
+			loggerInstance.warn(`Request from ${req.ip} denied: Server collision! We're attempting to add a server that's already known.`);
 			return res.sendStatus(400);
 		}
 		
@@ -408,9 +406,8 @@ function apiAddToServerList(req, res) {
 		};
 		
 		// Extra field santitization
-		newServer["players"] = (typeof req.body.serverPlayers === "undefined" || isNaN(req.body.serverPlayers) ? 0 : parseInt(req.body.serverPlayers, 10);
+		newServer["players"] = (typeof req.body.serverPlayers === "undefined" || isNaN(req.body.serverPlayers)) ? 0 : parseInt(req.body.serverPlayers, 10);
 		newServer["capacity"] = (typeof req.body.serverCapacity === "undefined" || isNaN(req.body.serverCapacity)) ? 0 : parseInt(req.body.serverCapacity, 10);
-
 		newServer["extras"] = (typeof req.body.serverExtras !== "undefined") ? req.body.serverExtras.trim() : "";
 
 		knownServers.push(newServer);
