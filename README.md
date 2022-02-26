@@ -51,7 +51,7 @@ If you want to have everything handled for you and you're running a linux server
 
 ### Requirements
 
-1.  NodeJS 12.x LTS (**download and install it first before trying to run this code**)
+1.  NodeJS 16 or newer LTS (**download and install it first before trying to run this code**)
 2.  A server instance, be it Windows or Linux
 3.  Some knowledge about programming, fair amount of patience and Git-fu
 
@@ -74,7 +74,7 @@ NOTE: It is possible to use a GUI such as Git GUI or SourceTree. Use whatever yo
 1.  Obtain a ZIP archive of this repository via the "Download as ZIP" option.
 2.  Extract it somewhere on your system.
 
-**Note: The ZIP Installation Method loses it's Git metadata, so you will not be able to have easy updates.**
+**Note: The ZIP Installation Method loses it's git metadata, so you will not be able to have easy updates.**
 
 ## Configuration
 
@@ -95,7 +95,7 @@ Install the Node modules by issuing `npm install --only=production`. This will r
 
 _Protip: Check to see if the port is open that you want NodeListServer to listen on. **You cannot have more than one list server listening on the same port number.**_
 
-1.  Invoke NodeJS with `listServer.js`. This is dependent on your operating system, but if Node is installed in your path, you can simply do `node listServer`. Please ensure you use the Node 12.x binary.
+1.  Invoke NodeJS with `listServer.js`. This is dependent on your operating system, but if Node is installed in your path, you can simply do `node listServer`. **Ensure your version of Node is 16 or higher.**
 2.  Observe the logs that are printed to the console, if the list server does not say anything then something went wrong. A successful startup is as follows:
 
 ```
@@ -147,29 +147,27 @@ As a bonus, here's some generic serializable classes that you can use to transla
 ```csharp
 
 [Serializable]
-public class NodeListServerListResponse
+public class ServerListResponse
 {
     // Number of known servers.
     public int count;
     // The container for the known servers.
-    public List<NodeListServerListEntry> servers;
+    public List<ServerListEntry> servers;
     // Ideally used for client-hosted games, tells you how often you should refresh your server information.
     public int updateFrequency;
 }
 
 [Serializable]
-public class NodeListServerListEntry
+public class ServerListEntry
 {
-  // The secret key on the master server config
-	public string serverKey; 
-  // Random generated UUID
+	// Random generated UUID
 	public string serverUuid; 
 	// IP address. Beware: Might be IPv6 format, and require you to chop off the leading "::ffff:" part. YMMV.
 	public string ip;
-	// Name of the server.
-	public string serverName;
 	// Port of the server.
 	public int serverPort;
+	// Name of the server.
+	public string serverName;
 	// Number of players on the server.
 	public int serverPlayers;
 	// The number of players maximum allowed on the server.
