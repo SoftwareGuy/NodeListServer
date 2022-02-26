@@ -150,6 +150,14 @@ function generateUuid() {
 	return generatedUuid;
 }
 
+// Taken from https://melvingeorge.me/blog/check-if-string-is-valid-ip-address-javascript
+function checkIfValidIP(str) {
+  // Regular expression to check if string is a IP address
+  const regexExp = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/gi;
+
+  return regexExp.test(str);
+}
+
 // - Authentication
 // apiCheckKey: Checks to see if the client specified key matches.
 function apiCheckKey(clientKey) {
@@ -363,7 +371,8 @@ function apiAddToServerList(req, res) {
 		}
 		
 		// Check for a sneaky IP address and port collison attempt.
-		queriedAddress = req.body.ip ?? req.ip;
+                // if(typeof req.body.serverIp != "undefined" && checkIfValidIP(req.body.serverIp)) .... todo
+		queriedAddress = req.ip;
 		
 		if(apiDoesThisServerExistByAddressPort(queriedAddress, req.body.serverPort)) {
 			loggerInstance.warn(`Request from ${req.ip} denied: Server collision! We're attempting to add a server that's already known.`);
@@ -428,12 +437,11 @@ function apiRemoveFromServerList(req, res) {
 
 // Automatically remove servers when they haven't updated after the time specified in the config.ini
 async function removeOldServers() {
-	knownServers = knownServers.filter((freshServer) => (freshServer.lastUpdated >= Date.now()));
-    setTimeout(removeOldServers, configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000);
+        knownServers = knownServers.filter((freshServer) => (freshServer.lastUpdated >= Date.now()));
+        setTimeout(removeOldServers, configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000);
 }
 
 removeOldServers();
-
 
 // -- Start the application -- //
 // Attach the functions to each path we use with NodeLS.
