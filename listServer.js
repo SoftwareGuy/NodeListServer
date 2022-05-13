@@ -287,22 +287,19 @@ function apiUpdateServerInList(req, res, serverId) {
   var [updatedServer] = knownServers.filter((server) => server.uuid === serverId);
   var theRemainingStack = knownServers.filter((server) => server.uuid !== serverId);
 
-  // Iterate through the request body and update the server object as needed
-  Object.entries({
-    name: req.body.serverName,
-    players: req.body.serverPlayers,
-    capacity: req.body.serverCapacity,
-    extras: req.body.serverExtras,
-    time: configuration.Pruning.inactiveServerRemovalMinutes,
-  }).forEach(([key, value]) => {
-    if (typeof value !== "undefined") {
-      return {
-        name: () => (updatedServer.name = value.trim()),
-        extras: () => (updatedServer.extras = value.trim()),
-        players: () => !isNaN(value) && (updatedServer.players = parseInt(value, 10)),
-        capacity: () => !isNaN(value) && (updatedServer.capacity = parseInt(value, 10)),
-        time: () => (updatedServer.lastUpdated = Date.now() + value * 60 * 1000),
-      }[key]();
+  // Create an object with our requestData data
+  var requestData = {
+    name: req.body.serverName?.trim(),
+    players: !isNaN(req.body.serverPlayers) && parseInt(req.body.serverPlayers, 10),
+    capacity: !isNaN(req.body.serverCapacity) && parseInt(req.body.serverCapacity, 10),
+    extras: req.body.serverExtras?.trim(),
+    lastUpdated: Date.now() + configuration.Pruning.inactiveServerRemovalMinutes * 60 * 1000,
+  };
+
+  // Cross-check the request data against our current server values and update if needed
+  Object.entries(requestData).forEach(([key, value]) => {
+    if (value && value !== updatedServer[key]) {
+      updatedServer[key] = value;
     }
   });
 
