@@ -213,7 +213,7 @@ function apiDoesServerExistByName(name) {
 // apiDoesThisServerExistByAddressPort: Checks if the server exists in our cache, by IP address and port.
 function apiDoesThisServerExistByAddressPort(ipAddress, port) {
   var doesExist = knownServers.filter(
-    (servers) => servers.ip === ipAddress.trim() && servers.port === port
+    (servers) => servers.ip === ipAddress.trim() && servers.port === +port
   );
   if (doesExist.length > 0) {
     return true;
@@ -398,9 +398,9 @@ function apiAddToServerList(req, res) {
 
     // Check for a sneaky IP address and port collison attempt.
     // if(typeof req.body.serverIp != "undefined" && checkIfValidIP(req.body.serverIp)) .... todo
-    queriedAddress = req.ip;
+    // queriedAddress = req.ip;
 
-    if (apiDoesThisServerExistByAddressPort(queriedAddress, req.body.serverPort)) {
+    if (apiDoesThisServerExistByAddressPort(req.ip, req.body.serverPort)) {
       loggerInstance.warn(
         `Request from ${req.ip} denied: Server collision! We're attempting to add a server that's already known.`
       );
@@ -410,7 +410,7 @@ function apiAddToServerList(req, res) {
     // Time to wrap things up.
     var newServer = {
       uuid: generateUuid(),
-      ip: queriedAddress,
+      ip: req.ip,
       name: req.body.serverName.trim(),
       port: parseInt(req.body.serverPort, 10),
     };
@@ -467,7 +467,7 @@ function apiRemoveFromServerList(req, res) {
     return res.sendStatus(400);
   }
 
-  if (!apiDoesServerExistByUuid(req.body.serverUuid, knownServers)) {
+  if (!apiDoesServerExistByUuid(req.body.serverUuid)) {
     loggerInstance.warn(
       `Request from ${req.ip} denied: Can't delete server with UUID '${req.body.serverUuid}' from cache.`
     );
