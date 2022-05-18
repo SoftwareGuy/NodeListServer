@@ -90,9 +90,7 @@ const expressApp = expressServer();
 // using an old configuration ini file that doesn't have the new setting in it.
 // Enabled by default, unless explicitly disabled.
 const useRateLimiter =
-  configuration.Security.useRateLimiter === undefined
-    ? true
-    : configuration.Security.useRateLimiter;
+  !configuration.Security.hasOwnProperty("useRateLimiter") || configuration.Security.useRateLimiter;
 
 if (useRateLimiter) {
   const expressRateLimiter = require("express-rate-limit");
