@@ -473,6 +473,6 @@ console.log(
   "Report bugs and fork the project on GitHub: https://github.com/SoftwareGuy/NodeListServer"
 );
 
-expressApp.listen(configuration.Core.listenPort, () =>
+expressApp.listen(configuration.Core.listenPort, configuration.Core.ipV4 ? "0.0.0.0" : "::", () =>
   console.log(`NodeLS is now listening on port ${configuration.Core.listenPort}.`)
 );
