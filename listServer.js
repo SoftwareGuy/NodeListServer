@@ -26,14 +26,13 @@ const REVISION_VER = 3;
 // Require some essential libraries and modules.
 // ---------------
 const log4js = require("log4js");
-const iniParser = require("multi-ini");
 const fs = require("fs");
 const uuid = require("uuid");
-
+const { configuration } = require("./lib/config");
 // ---------------
 // Used to store our configuration file data.
 // ---------------
-var configuration;
+
 var logFile = "NodeListServer.log";
 
 // ---------------
@@ -80,30 +79,6 @@ fs.access(__dirname, fs.constants.W_OK, function (err) {
 // Now we get the logger instance.
 var loggerInstance = log4js.getLogger("NodeLS");
 
-// Do we have a configuration file?
-if (fs.existsSync("config.ini")) {
-  configuration = iniParser.read("./config.ini");
-  // Use only for checking if configuration is valid, and not in production.
-  // console.log(configuration);
-} else {
-  loggerInstance.error("NodeListServer failed to start due to a missing 'config.ini' file.");
-  loggerInstance.error("Please ensure one exists in the directory next to the script file.");
-  loggerInstance.error(
-    "If you see this message repeatedly, you might have found a bug worth reporting at https://github.com/SoftwareGuy/NodeListServer."
-  );
-  loggerInstance.error("Exiting...");
-  process.exit(1);
-}
-
-// This function was coded on a whim and probably is jank. Improvements welcome,
-// especially how to cast a string into a boolean. ie. "true" -> true.
-// In C# I would do bool.TryParse or some other cast.
-function translateConfigOptionToBool(value) {
-  if (typeof value === "undefined" || value === "false") return false;
-  // Thanks to https://medium.com/geekculture/20-javascript-snippets-to-code-like-a-pro-86f5fda5598e
-  else return !!value;
-}
-
 // Constant references to various modules.
 const expressServer = require("express");
 const expressApp = expressServer();
@@ -115,10 +90,12 @@ const bodyParser = require("body-parser");
 // Note: We check if this is undefined as well as set to true, because we may be
 // using an old configuration ini file that doesn't have the new setting in it.
 // Enabled by default, unless explicitly disabled.
-if (
-  typeof configuration.Security.useRateLimiter === "undefined" ||
-  translateConfigOptionToBool(configuration.Security.useRateLimiter)
-) {
+const useRateLimiter =
+  configuration.Security.useRateLimiter === undefined
+    ? true
+    : configuration.Security.useRateLimiter;
+
+if (useRateLimiter) {
   const expressRateLimiter = require("express-rate-limit");
   const limiter = expressRateLimiter({
     windowMs: configuration.Security.rateLimiterWindowMs,
@@ -133,7 +110,7 @@ if (
 // Allowed server addresses cache.
 var allowedServerAddresses = [];
 
-if (translateConfigOptionToBool(configuration.Auth.useAccessControl)) {
+if (configuration.Auth.useAccessControl) {
   console.log("Security: Beware, Access Control Lists are enabled.");
   allowedServerAddresses = configuration.Auth.allowedIpAddresses.split(",");
 }
@@ -250,7 +227,7 @@ function apiGetServerList(req, res) {
   // Run a loop though the list.
   knownServers.forEach((knownServer) => {
     // If we're hiding servers from the same IP, filter them out.
-    if (translateConfigOptionToBool(configuration.Pruning.dontShowServersOnSameIp)) {
+    if (configuration.Pruning.dontShowServersOnSameIp) {
       if (knownServer.ip === req.ip) {
         loggerInstance.info(
           `Skipped server '${knownServer.uuid}', reason: looks like it's hosted on the same IP as this client`
@@ -322,10 +299,7 @@ function apiAddToServerList(req, res) {
   var potentialExistingServerId = "";
 
   // Check with access control, if that's enabled.
-  if (
-    translateConfigOptionToBool(configuration.Auth.useAccessControl) &&
-    !allowedServerAddresses.includes(req.ip)
-  ) {
+  if (configuration.Auth.useAccessControl && !allowedServerAddresses.includes(req.ip)) {
     // It's not allowed. On ya bike mate.
     loggerInstance.warn(`Request denied from ${req.ip}: Not in ACL.`);
     return res.sendStatus(403); // 403 Forbidden
@@ -370,7 +344,7 @@ function apiAddToServerList(req, res) {
     // If our security setting doesn't allow duplicate server names, then we should check to ensure that
     // it doesn't clash.
     if (
-      !translateConfigOptionToBool(configuration.Security.allowDuplicateServerNames) &&
+      !configuration.Security.allowDuplicateServerNames &&
       apiDoesServerExistByName(req.body.serverName)
     ) {
       loggerInstance.warn(
@@ -445,10 +419,7 @@ function apiRemoveFromServerList(req, res) {
   if (apiIsKeyFromRequestIsBad(req)) return res.sendStatus(400);
 
   // Are we using access control? If so, are they allowed to do this?
-  if (
-    translateConfigOptionToBool(configuration.Auth.useAccessControl) &&
-    !allowedServerAddresses.includes(req.ip)
-  ) {
+  if (configuration.Auth.useAccessControl && !allowedServerAddresses.includes(req.ip)) {
     // Not allowed.
     loggerInstance.warn(
       `Remove server request blocked from ${req.ip}. They are not known in our allowed IPs list.`
