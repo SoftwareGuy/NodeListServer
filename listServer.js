@@ -82,7 +82,6 @@ var loggerInstance = log4js.getLogger("NodeLS");
 // Constant references to various modules.
 const expressServer = require("express");
 const expressApp = expressServer();
-const bodyParser = require("body-parser");
 
 // Security checks
 
@@ -116,8 +115,8 @@ if (configuration.Auth.useAccessControl) {
 }
 
 // Make sure we use some other things too.
-expressApp.use(bodyParser.json());
-expressApp.use(bodyParser.urlencoded({ extended: true }));
+expressApp.use(expressServer.json());
+expressApp.use(expressServer.urlencoded({ extended: true }));
 
 // Server memory array cache.
 var knownServers = [];
