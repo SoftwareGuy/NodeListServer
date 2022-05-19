@@ -25,11 +25,10 @@ const REVISION_VER = 3;
 // ---------------
 // Require some essential libraries and modules.
 // ---------------
-
 // - Import what we need from our other files
 const { loggerInstance } = require("./lib/logger"); // our logger instance
 const { configuration } = require("./lib/config"); // our configuration
-const { generateUuid, secondsUntilNextPurge } = require("./lib/utils"); // some utils
+const { generateUuid } = require("./lib/utils"); // some utils
 const { expressApp } = require("./lib/express"); // our express server
 const knownServers = require("./lib/serverList");
 
@@ -39,7 +38,7 @@ function apiGetServerList(req, res) {
   loggerInstance.info(`${req.ip} accepted; communication key matched: '${req.body.serverKey}'`);
 
   // Clean out the old ones.
-  knownServers.purge((freshServer) => freshServer.lastUpdated >= Date.now());
+  knownServers.list.filter((freshServer) => freshServer.lastUpdated >= Date.now());
 
   // A client wants the server list. Compile it and send out via JSON.
   var serverList = knownServers.map((knownServer) => {
@@ -63,10 +62,6 @@ function apiGetServerList(req, res) {
     count: serverList.length,
     servers: serverList,
     updateFrequency: configuration.Pruning.ingameUpdateFrequency, // How often a game server should update it's listing
-    nextRefresh: secondsUntilNextPurge(
-      knownServers.timeLastPurged,
-      configuration.Pruning.inactiveServerRemovalMinutes
-    ), // Next list server purge time (in seconds)
   };
 
   loggerInstance.info(`Replying to ${req.ip} with known server list.`);
