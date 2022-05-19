@@ -14,5 +14,8 @@
   },
   "author": "Matt Coburn (SoftwareGuy/Coburn)",
   "license": "MIT",
-  "repository": "https://github.com/SoftwareGuy/NodeListServer"
+  "repository": "https://github.com/SoftwareGuy/NodeListServer",
+  "devDependencies": {
+    "eslint": "^8.15.0"
+  }
 }
