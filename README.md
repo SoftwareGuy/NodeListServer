@@ -191,18 +191,19 @@ Make sure you POST the correct data when you want to add/remove servers. See API
 
 
 
-NodeLS Basic server Instructions:-
+<h1> NodeLS Basic server Instructions:- </h1>
  
 - First of all make sure you have Nodejs downloaded and Installed
 - Open Folder through VSCode
 - run ``` npm install ``` to install dependencies 
 - run ``` node listServer.js ``` to start your NodeLS server  
 
-API Quickstart Instructions:-
+</hr>
 
-# Firing Up NodeLS Using PostMan :-
+<h1>API Quickstart Instructions:-</h1>
+<h3> Firing Up NodeLS Using PostMan : </h3>
 
-1) POST - http://127.0.0.1:8889/add - x-WWW-FORM (apiAddToServerList() => Responsible)
+1) POST - http://127.0.0.1:8889/add - x-WWW-FORM </br>
 <pre><code class="hljs language-shell">
     ip => ip addres of the node
     serverKey => NodeListServerDefaultKey ====== (specified in the Configuration file)
@@ -214,10 +215,13 @@ API Quickstart Instructions:-
 
 
 *Congratulations! you now have ~ serverUuid || "uuid" ~~ of the created server called "Lulu"* !!
+
 </hr>
-2) POST - http://127.0.0.1:8889/list - x-WWW-FORM
-[Line 236 - 270]
+
+2) POST - http://127.0.0.1:8889/list - x-WWW-FORM </br>
+<pre><code class="hljs language-shell">
 serverKey => NodeListServerDefaultKey ====== (specified in the Configuration file)
+</code></pre>
 
 * Now you have list of created servers as the following...*
 
@@ -247,8 +251,8 @@ serverKey => NodeListServerDefaultKey ====== (specified in the Configuration fil
 </code></pre>
 
 </hr>
-3) POST - http://127.0.0.1:8889/remove - x-WWW-FORM
-[442 - 482]
+
+3) POST - http://127.0.0.1:8889/remove - x-WWW-FORM </br>
 serverKey => NodeListServerDefaultKey ====== (specified in the Configuration file)
 serverUuid => de94592c-7672-419b-8fe2-234b48e46607 (the Generated uuid)
 
