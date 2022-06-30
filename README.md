@@ -206,7 +206,7 @@ Make sure you POST the correct data when you want to add/remove servers. See API
 1) POST - http://127.0.0.1:8889/add - x-WWW-FORM </br>
 <pre><code class="hljs language-shell">
     ip => ip addres of the node
-    serverKey => NodeListServerDefaultKey ====== (specified in the Configuration file)
+    serverKey => NodeListServerDefaultKey (specified in the Configuration file)
     serverName => Lulu
     serverPort => 7777 
     serverPlayers => 2 (optional)
@@ -220,7 +220,7 @@ Make sure you POST the correct data when you want to add/remove servers. See API
 
 2) POST - http://127.0.0.1:8889/list - x-WWW-FORM </br>
 <pre><code class="hljs language-shell">
-serverKey => NodeListServerDefaultKey ====== (specified in the Configuration file)
+serverKey => NodeListServerDefaultKey (specified in the Configuration file)
 </code></pre>
 
 * Now you have list of created servers as the following...*
@@ -253,8 +253,10 @@ serverKey => NodeListServerDefaultKey ====== (specified in the Configuration fil
 </hr>
 
 3) POST - http://127.0.0.1:8889/remove - x-WWW-FORM </br>
-serverKey => NodeListServerDefaultKey ====== (specified in the Configuration file)
-serverUuid => de94592c-7672-419b-8fe2-234b48e46607 (the Generated uuid)
+<pre><code class="hljs language-shell">
+	serverKey => NodeListServerDefaultKey (specified in the Configuration file)
+	serverUuid => de94592c-7672-419b-8fe2-234b48e46607 (the Generated uuid)
+</code></pre>
 
 * Successfully Removed that server !!*
 - Looking forward to continue adding to this Documentation and developing this awesome tool with Github community
