@@ -188,3 +188,75 @@ Make sure you POST the correct data when you want to add/remove servers. See API
 
 
 ***Thank you for choosing Australian Open Source Software.***
+
+
+
+<h1> NodeLS Basic server Instructions:- </h1>
+ 
+- First of all make sure you have Nodejs downloaded and Installed
+- Open Folder through VSCode
+- run ``` npm install ``` to install dependencies 
+- run ``` node listServer.js ``` to start your NodeLS server  
+
+</hr>
+
+<h1>API Quickstart Instructions:-</h1>
+<h3> Firing Up NodeLS Using PostMan : </h3>
+
+1) POST - http://127.0.0.1:8889/add - x-WWW-FORM </br>
+<pre><code class="hljs language-shell">
+    ip => ip addres of the node
+    serverKey => NodeListServerDefaultKey (specified in the Configuration file)
+    serverName => Lulu
+    serverPort => 7777 
+    serverPlayers => 2 (optional)
+    serverCapacity => 20 (optional)
+</code></pre>
+
+
+*Congratulations! you now have ~ serverUuid || "uuid" ~~ of the created server called "Lulu"* !!
+
+</hr>
+
+2) POST - http://127.0.0.1:8889/list - x-WWW-FORM </br>
+<pre><code class="hljs language-shell">
+serverKey => NodeListServerDefaultKey (specified in the Configuration file)
+</code></pre>
+
+* Now you have list of created servers as the following...*
+
+<pre><code class="hljs language-shell">
+"Example callback" => {
+    "count": 2,
+    "servers": [
+        {
+            "ip": "::ffff:127.0.0.1",
+            "name": "Lulu",
+            "port": 7777,
+            "players": 0,
+            "capacity": 0,
+            "extras": ""
+        },
+        {
+            "ip": "::ffff:127.0.0.1",
+            "name": "Lulus",
+            "port": 7337,
+            "players": 2,
+            "capacity": 20,
+            "extras": ""
+        }
+    ],
+    "updateFrequency": "300"
+}
+</code></pre>
+
+</hr>
+
+3) POST - http://127.0.0.1:8889/remove - x-WWW-FORM </br>
+<pre><code class="hljs language-shell">
+	serverKey => NodeListServerDefaultKey (specified in the Configuration file)
+	serverUuid => de94592c-7672-419b-8fe2-234b48e46607 (the Generated uuid)
+</code></pre>
+
+* Successfully Removed that server !!*
+- Looking forward to continue adding to this Documentation and developing this awesome tool with Github community
