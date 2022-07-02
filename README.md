@@ -1,10 +1,10 @@
-# NodeListServer Generation 2
+# NodeListServer Generation 2.1
 
 ![MIT Licensed](https://img.shields.io/badge/license-MIT-green.svg)
 [![Ko-Fi](https://img.shields.io/badge/Donate-Ko--Fi-red)](https://ko-fi.com/coburn) 
 [![PayPal](https://img.shields.io/badge/Donate-PayPal-blue)](https://paypal.me/coburn64)
 
-NodeLS (Node List Server) is a game server directory application that aims to provide a reliable way of registering, deregistering and informing clients of servers available for your game(s).
+NodeLS, short for Node List Server, is a game server directory application that aims to provide a reliable way of registering, deregistering and informing clients of servers available for your game(s).
 
 ## Why NodeLS?
 
@@ -13,24 +13,22 @@ host-client ("listen") or pure dedicated instances. However, here comes the next
 
 How the heck do you display servers that are available for you to join?
 
-Enter NodeLS. NodeLS started as a free alternative/reimplementation of the Mirror List Server using NodeJS. The source
-is licensed under MIT. That said, using NodeLS also brings you assurance that you control the data that is being sent and received, not a third party
-other than the server provider you deal with.
+Enter NodeLS. It's a flexible and open source server listing system that works with pretty much any software that can understand JSON. NodeLS also brings you 
+assurance that you control the data that is being sent and received, not a third party other than the server provider you deal with.
 
 _**Please consider a donation (see the Ko-Fi button above) if this server software is useful to you.**_
 
 ## Support Update
-While issue tickets are the preferred way of support, you may also ask for support on the [Oiran Studio Discord](https://discord.gg/kUvJYjrbHE). It may be a faster way of getting support if I'm not busy with other client tasks. Sometimes issue ticket notificatons get snowed under a truck load of new email.
+While issue tickets are the preferred way of support, you may also ask for support on the [Oiran Studio Discord](https://discord.gg/kUvJYjrbHE). It may be a faster way of getting support if I'm not busy with other client tasks. Sometimes issue ticket notifications get snowed under a truck load of new email.
 
 ## Features
 
+-   **Fast:** We use NodeJS to power this baby.
 -   **OSS Core:** Feel free to tailor it to your needs, it's open source. Find a bug? Fix it, shoot me a PR, let me review and if it looks good, congrats!
--	**Game Engine Agnostic:** Thanks to the HTTP API, any engine that can do HTTP requests can take advantage of NodeLS.
--   **Fast:** Mirror's retired List Server was written in Erlang. We use NodeJS to power this baby.
+-   **Game Engine Agnostic:** Thanks to the HTTP API, any engine that can do HTTP requests can take advantage of NodeLS.
+-   **WebGL compatible:** No complex magic required. NodeLS uses a simple API to query, add and remove servers. 
 -   **Secure:** ACLs (Access Control Lists) can be used as well as key authenication to prevent anyone adding/removing servers from your instances. Servers must provide a key in order to register, and rate limiting clients helps keep traffic floods at bay.
--	**Configurable:** Generation 2 of NodeLS now features a INI-styled configuration file. This makes configuration much easier.
--   **WebGL compatible:** No complex magic required. NodeLS uses a simple HTTP API to add and remove servers. 
-
+-   **Configurable:** Hard-coded options are kept to a minimum, allowing greater flexibility.
 
 ## Non-Features
 
@@ -39,28 +37,30 @@ While issue tickets are the preferred way of support, you may also ask for suppo
 
 ## Bug Fixes, New Features, etc
 
--   **If you find a bug:** Please report it via the Issues ticket system. If you know NodeJS-flavoured Javascript and ***think that you can fix it*** then I'd really appreciate a pull request!
--   **Refactors, Improvements, Tweaks:** I'm all ears to improvements and refinements. Please open a issue and suggest your modifications or fork this project, improve it, then open a PR.
--   **Ooh, shiny new features:** New features are carefully considered. I try to follow the KISS prinicible, which helps not only keep code clean but doesn't bloat the end product. 
+-   **Found a bug?** Please report it via the Issues ticket system. If you ***think that you can fix it*** then give it a shot. I'd really appreciate a pull request!
+-   **Refactors, Improvements, Tweaks:** Improvements and refinements are welcome - open a issue and suggest your modifications or fork this project, improve it, then shoot in a PR.
+-   **Ooh, shiny new feature:** New features are carefully considered. NodeLS tries not to be a bloated end product, but some features are nice to have...
 
 ## Setup
 
 ### Docker Support
 
+***TODO: Review docker support and update it***
+
 If you want to have everything handled for you and you're running a linux server, see [the Docker support documentation](DOCKER-SUPPORT.md) file for more info. Please note that this will require some additional setup.
 
 ### Requirements
 
-1.  NodeJS 16 or newer LTS (**download and install it first before trying to run this code**)
+1.  Node 16 or newer (most recent LTS is recommended)
 2.  A server instance, be it Windows or Linux
 3.  Some knowledge about programming, fair amount of patience and Git-fu
 
-**Make sure your installation of NodeJS 12.x LTS is functional before continuing!**
+**Make sure your installation of Node is functional before continuing!**
 
 ## Installation
 
 ### Git Clone Method
-1.	Run this in the console of your operating system where you want the code to be placed (for example, `C:\NodeListServer`).
+1.    Run this in the console of your operating system where you want the code to be placed (for example, `C:\NodeListServer`).
 ```
 git clone https://github.com/SoftwareGuy/NodeListServer .
 ```
@@ -74,9 +74,11 @@ NOTE: It is possible to use a GUI such as Git GUI or SourceTree. Use whatever yo
 1.  Obtain a ZIP archive of this repository via the "Download as ZIP" option.
 2.  Extract it somewhere on your system.
 
-**Note: The ZIP Installation Method loses it's git metadata, so you will not be able to have easy updates.**
+**Note: The ZIP Installation Method loses the git metadata, so you will not be able to have easy updates.**
 
 ## Configuration
+
+***TODO: Update this***
 
 1. Open `config.ini`.
 2. Carefully make any adjustments to the configuration as desired (see [the configuration page](CONFIGURATION.md) for more information).
@@ -89,7 +91,7 @@ NOTE: It is possible to use a GUI such as Git GUI or SourceTree. Use whatever yo
 ### Starting & Stopping
 
 **First Run:**
-Install the Node modules by issuing `npm install --only=production`. This will read the requirements from packages.json.
+1.  Install the Node modules by issuing `npm install --only=production`. This will read the requirements from packages.json.
 
 **To start the server:**
 
@@ -114,7 +116,7 @@ If all goes well, you should get some JSON as a result. If you don't, or you get
 
 **To stop the server:**
 
-Simply CTRL+C the running Node process, or you can use `kill`/`pkill` to kill the node instance. I'd recommend using `ps aux` and `kill <pid>` carefully, because `pkill node` would try to kill all node instances on your box - and that's really no bueno.
+Simply CTRL+C the running Node process, or you can use `kill`/`pkill` to kill the node instance. I'd recommend using `ps aux` and `kill <pid>` carefully, because `pkill node` would try to kill all node instances on your box - and that can be really no bueno.
 
 ### Updating NodeListServer
 
