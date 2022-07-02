@@ -80,9 +80,9 @@ NOTE: It is possible to use a GUI such as Git GUI or SourceTree. Use whatever yo
 
 ***TODO: Update this***
 
-1. Open `config.ini`.
+1. Open `lib/config.js`.
 2. Carefully make any adjustments to the configuration as desired (see [the configuration page](CONFIGURATION.md) for more information).
-3. Save and Exit. Re-upload your modified `config.ini` (ie. you edited it via FTP).
+3. Save and Exit. Re-upload your modified `config.js` (ie. you edited it via FTP).
 
 ## Operating & Updating
 
@@ -97,7 +97,7 @@ NOTE: It is possible to use a GUI such as Git GUI or SourceTree. Use whatever yo
 
 _Protip: Check to see if the port is open that you want NodeListServer to listen on. **You cannot have more than one list server listening on the same port number.**_
 
-1.  Invoke NodeJS with `listServer.js`. This is dependent on your operating system, but if Node is installed in your path, you can simply do `node listServer`. **Ensure your version of Node is 16 or higher.**
+1.  Start the server using `npm start` or `node init`. 
 2.  Observe the logs that are printed to the console, if the list server does not say anything then something went wrong. A successful startup is as follows:
 
 ```
