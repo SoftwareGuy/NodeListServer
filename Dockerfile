@@ -1,25 +1,25 @@
 # This file is part of NodeListServer, available at https://github.com/SoftwareGuy/NodeListServer
 # PRs, bug fixes and improvements are welcome. Don't delay, get those pull requests in today!
 
-# We'll use Node 12 for this docker container.
-FROM node:12
+# We'll use Node 18 for this docker container.
+FROM node:18
 
 # This exposes NodeListServer to the outside world.
 EXPOSE 8889
 
-# Copy and configure some stuff.
-RUN mkdir -p /opt/nodelistserver
+# Set working directory
+WORKDIR /app
 
-COPY listServer.js /opt/nodelistserver/listServer.js
-COPY package.json /opt/nodelistserver/package.json
-COPY package-lock.json /opt/nodelistserver/package-lock.json
-COPY config.ini /opt/nodelistserver/config.ini
-COPY docker-entrypoint.sh /entrypoint.sh
+# Copying package.json
+COPY ["package.json", "package-lock.json*", "./"]
 
-# Make it executable!
-RUN chmod +x /entrypoint.sh
+# Installing dependencies
+RUN npm install --omit=dev
+
+# Copying rest of files
+COPY . .
 
 # Boot.
-ENTRYPOINT ["/entrypoint.sh"]
+CMD [ "node", "init.js" ]
 
 # End of Dockerfile
