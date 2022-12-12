@@ -4,7 +4,7 @@
   "description": "NodeJS (re)implementation of the Mirror List Server",
   "main": "listServer.js",
   "dependencies": {
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "express-rate-limit": "^5.3.0",
     "log4js": "^6.4.0",
     "uuid": "^8.3.2"
